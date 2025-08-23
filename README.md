@@ -1,136 +1,106 @@
-# 🌐 CrawlX – A Lightweight Go Web Crawler
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go" />
-  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
-  <img src="https://img.shields.io/github/stars/yourusername/crawlx?style=social" />
-  <img src="https://img.shields.io/github/forks/yourusername/crawlx?style=social" />
-</p>
-
-CrawlX is a **fast, recursive web crawler built in Go**.  
-It can fetch links up to a specified depth, resolve relative URLs into absolute ones, and supports **concurrent crawling with goroutines & channels** 🚀  
+# CrawlX 🕷️  
+*A fast, recursive, and concurrent web crawler written in Go.*
 
 ---
 
-## ✨ Features
-- 🌍 **Recursive crawling** – follows links up to a configurable depth  
-- ⚡ **Concurrent fetching** – crawl multiple links in parallel using goroutines  
-- 🔗 **URL resolution** – converts relative links into absolute URLs  
-- 📋 **Simple CLI** – easy to run with flags  
-- 🛡️ **Error handling** – skips broken links gracefully  
+## ✨ Overview
+CrawlX is a lightweight CLI-based web crawler built in Go. It can recursively crawl web pages, follow links, and provide insights into visited URLs.  
+The project is structured for **cross-platform usage**, with installation scripts for both Linux/macOS and Windows.  
+
+---
+
+## 🚀 Features
+- 🌐 **Recursive Crawling** — explore web pages up to a user-defined depth.  
+- ⚡ **Concurrency with Goroutines** — crawl multiple links in parallel for faster performance.  
+- 📝 **Customizable Flags** — configure URL, depth, verbosity.  
+- 📦 **Cross-Platform Installation** — works on Linux/macOS and Windows.  
+- 📊 **Summary Output** — keep track of visited links.  
 
 ---
 
 ## 📦 Installation
 
-### 1. Clone the repository
+### Linux / macOS
 ```bash
-git clone https://github.com/yourusername/crawlx.git
-cd crawlx
+git clone https://github.com/sh4dowkey/Crawlx.git
+cd Crawlx
+chmod +x setup.sh
+sudo ./setup.sh
 ```
 
-### 2. Build the binary
-```bash
-go build -o crawlx ./cmd
+### Windows (PowerShell)
+```powershell
+git clone https://github.com/sh4dowkey/Crawlx.git
+cd Crawlx
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\setup.ps1
 ```
 
-### 3. Run the crawler
-```bash
-./crawlx --url https://example.com --depth 2
-```
-
-Or using short flags:
-```bash
-./crawlx -u https://example.com -d 2
-```
+That’s it! 🎉  
+Once installed, you can run `crawlx` from anywhere in your terminal.  
 
 ---
 
-## ⚙️ Usage
+## 🛠️ Usage
 
+Basic usage:
 ```bash
-Usage:
-  crawlx [options]
+crawlx --url https://example.com --depth 2
+```
 
-Options:
-  -u, --url string     The starting URL to crawl (required)
-  -d, --depth int      Depth level for recursive crawling (default: 2)
+Shorthand flags:
+```bash
+crawlx -u https://example.com -d 3
+```
+
+Verbose mode:
+```bash
+crawlx -u https://example.com -d 2 --verbose
+```
+
+Example output:
+```
+Crawling: https://example.com
+Found: https://example.com/about
+Found: https://example.com/contact
+Visited: 3 links
 ```
 
 ---
 
 ## 📂 Project Structure
 ```
-crawlx/
-│── cmd/
-│   ├── main.go      # Entry point (parses flags, starts crawl)
-│   ├── crawl.go     # Core crawler logic
-│── go.mod           # Go module file
-│── README.md        # Documentation
-│── dist/            # Compiled binaries (ignored in git)
+Crawlx/
+│── cmd/            # Main source code (main.go, crawl.go)
+│── dist/           # Built binaries
+│── setup.sh        # Linux/macOS installer
+│── setup.ps1       # Windows installer
+│── go.mod          # Go module file
+│── go.sum          # Go dependencies
 ```
 
 ---
 
-## 🖼️ Example Output
-
-```bash
-$ ./crawlx -u https://golang.org -d 1
-[+] Crawled: https://golang.org [200]
-[+] Crawled: https://golang.org/doc/ [200]
-[+] Crawled: https://golang.org/pkg/ [200]
-```
-
----
-
-## 🚀 Concurrency Model
-
-CrawlX leverages Go’s **goroutines + sync.WaitGroup** to fetch links in parallel:
-
-```go
-wg.Add(1)
-go Crawl(link, depth-1, &wg)
-```
-
-This ensures faster crawling without blocking on a single request.
-
----
-
-## 🛠️ Roadmap
-
-- [x] Basic recursive crawling  
-- [x] Depth control  
-- [x] Absolute URL resolution  
-- [x] Concurrency with goroutines  
-- [ ] Add `--verbose` flag for detailed logs  
-- [ ] Robots.txt handling  
-- [ ] Export crawled URLs to JSON/CSV  
-- [ ] Add colored terminal output  
-- [ ] Configurable concurrency limit  
+## 🛣️ Roadmap
+- [ ] Add support for robots.txt parsing  
+- [ ] Export results (JSON/CSV)  
+- [ ] Ignore filetypes (e.g., images, PDFs)  
+- [ ] Crawl domain restrictions  
 
 ---
 
 ## 🤝 Contributing
-
 Contributions are welcome!  
 1. Fork the repo  
-2. Create your feature branch (`git checkout -b feature-name`)  
-3. Commit changes (`git commit -m "Add feature"`)  
-4. Push to branch (`git push origin feature-name`)  
-5. Open a Pull Request 🚀  
+2. Create a new branch (`feature-xyz`)  
+3. Commit your changes  
+4. Submit a pull request  
 
 ---
 
 ## 📜 License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
-
----
-
-## 💡 Inspiration
-This project was created as part of a **learning roadmap** to master Go, concurrency, and system-level programming concepts in the context of a simple but powerful tool: a web crawler.
+This project is licensed under the **MIT License**.  
 
 ---
 
-<p align="center">⭐ If you like this project, give it a star on GitHub! ⭐</p>
+### 🕸️ Crawl smarter. Crawl faster. CrawlX.
