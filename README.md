@@ -119,6 +119,21 @@ Example output:
 
 ---
 
+
+## ⚙️ Usage
+
+```bash
+Usage:
+  crawlx [options]
+
+Options:
+  -u, --url string     The starting URL to crawl (required)
+  -d, --depth int      Depth level for recursive crawling (default: 2)
+  --verbose bool       Enable verbose output with more details
+```
+
+---
+
 ## 📂 Project Structure
 ```
 Crawlx/
@@ -140,18 +155,29 @@ Crawlx/
 
 ---
 
+
 ## 🤝 Contributing
+
 Contributions are welcome!  
 1. Fork the repo  
-2. Create a new branch (`feature-xyz`)  
-3. Commit your changes  
-4. Submit a pull request  
+2. Create your feature branch (`git checkout -b feature-name`)  
+3. Commit changes (`git commit -m "Add feature"`)  
+4. Push to branch (`git push origin feature-name`)  
+5. Open a Pull Request 🚀  
 
 ---
 
 ## 📜 License
-This project is licensed under the **MIT License**.  
+
+This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
 
 ---
 
-### 🕸️ Crawl smarter. Crawl faster. CrawlX.
+## 💡 Inspiration
+This project was created as part of a **learning roadmap** to master Go, concurrency, and system-level programming concepts in the context of a simple but powerful tool: a web crawler.
+
+---
+
+<p align="center">⭐ If you like this project, give it a star on GitHub! ⭐</p>
+
+<p align="center">🕸️ Crawl smarter. Crawl faster. CrawlX.</p>
