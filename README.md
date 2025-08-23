@@ -1,5 +1,15 @@
-# CrawlX 🕷️  
-*A fast, recursive, and concurrent web crawler written in Go.*
+# CrawlX 🕷️ – A Lightweight Go Web Crawler
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go" />
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen?style=flat-square" />
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" />
+  <img src="https://img.shields.io/github/stars/yourusername/crawlx?style=social" />
+  <img src="https://img.shields.io/github/forks/yourusername/crawlx?style=social" />
+</p>
+
+CrawlX is a **fast, recursive web crawler built in Go**.  
+It can fetch links up to a specified depth, resolve relative URLs into absolute ones, and supports **concurrent crawling with goroutines & channels** 🚀  
 
 ---
 
@@ -14,7 +24,9 @@ The project is structured for **cross-platform usage**, with installation script
 - ⚡ **Concurrency with Goroutines** — crawl multiple links in parallel for faster performance.  
 - 📝 **Customizable Flags** — configure URL, depth, verbosity.  
 - 📦 **Cross-Platform Installation** — works on Linux/macOS and Windows.  
-- 📊 **Summary Output** — keep track of visited links.  
+- 🔗 **URL resolution** – converts relative links into absolute URLs  
+- 📋 **Simple CLI** – easy to run with flags  
+- 🛡️ **Error handling** – skips broken links gracefully
 
 ---
 
@@ -45,7 +57,7 @@ Once installed, you can run `crawlx` from anywhere in your terminal.
 
 Basic usage:
 ```bash
-crawlx --url https://example.com --depth 2
+crawlx --url https://example.com --depth 4
 ```
 
 Shorthand flags:
@@ -60,10 +72,49 @@ crawlx -u https://example.com -d 2 --verbose
 
 Example output:
 ```
-Crawling: https://example.com
-Found: https://example.com/about
-Found: https://example.com/contact
-Visited: 3 links
+[+] Crawling: https://toscrape.com (Depth 0)
+    [200 OK] Found 10 links.
+    [+] Crawling: http://quotes.toscrape.com/ (Depth 1)
+        [200 OK] Found 49 links.
+    [+] Crawling: http://quotes.toscrape.com/login (Depth 1)
+        [200 OK] Found 4 links.
+    [+] Crawling: http://quotes.toscrape.com/js (Depth 1)
+        [200 OK] Found 5 links.
+    [+] Crawling: http://quotes.toscrape.com/js-delayed (Depth 1)
+        [200 OK] Found 5 links.
+    [+] Crawling: http://books.toscrape.com (Depth 1)
+        [200 OK] Found 73 links.
+    [+] Crawling: http://quotes.toscrape.com (Depth 1)
+        [200 OK] Found 49 links.
+    [+] Crawling: http://quotes.toscrape.com/random (Depth 1)
+        [200 OK] Found 6 links.
+    [+] Crawling: http://quotes.toscrape.com/scroll (Depth 1)
+        [200 OK] Found 4 links.
+    [+] Crawling: http://quotes.toscrape.com/search.aspx (Depth 1)
+        [200 OK] Found 4 links.
+    [+] Crawling: http://quotes.toscrape.com/tableful (Depth 1)
+        [200 OK] Found 35 links.
+
+--- Crawl Complete ---
+
+--- Crawl Summary ---
+- Crawled 11 pages in 7.444s.
+- Success: 11 pages
+- Warnings: 0 pages
+- Errors: 0 pages
+
+--- Visited Links ---
+- Visited: http://quotes.toscrape.com/random
+- Visited: http://quotes.toscrape.com/search.aspx
+- Visited: https://toscrape.com
+- Visited: http://quotes.toscrape.com/
+- Visited: http://quotes.toscrape.com/login
+- Visited: http://quotes.toscrape.com/js
+- Visited: http://quotes.toscrape.com/js-delayed
+- Visited: http://quotes.toscrape.com
+- Visited: http://quotes.toscrape.com/scroll
+- Visited: http://quotes.toscrape.com/tableful
+- Visited: http://books.toscrape.com
 ```
 
 ---
