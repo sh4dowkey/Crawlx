@@ -41,7 +41,7 @@ echo -e "${COLOR_CYAN}            CRAWLX CLI INSTALLER${COLOR_RESET}"
 echo ""
 
 # --- Step 1: Check for binary ---
-echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 1 of 3: Verifying binary location..."
+echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 1 of 4: Verifying binary location..."
 if [ ! -f "$SOURCE_PATH" ]; then
     echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Binary not found at '$SOURCE_PATH'."
     echo "       The installation cannot proceed."
@@ -60,24 +60,34 @@ echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Binary found."
 echo ""
 
 # --- Step 2: Copy binary ---
-echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 2 of 3: Copying file to system directory..."
+echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 2 of 4: Copying file to system directory..."
 sudo cp "$SOURCE_PATH" "$DEST_PATH"
 if [ $? -eq 0 ]; then
     echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} File copied successfully."
 else
-    echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Installation failed."
-    echo -e "       Check your permissions or try running the script with 'sudo'."
+    echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Installation failed. Check permissions or try running with 'sudo'."
     exit 1
 fi
 echo ""
 
-# --- Step 3: Verify installation ---
-echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 3 of 3: Verifying final installation..."
-if [ -f "$DEST_PATH" ]; then
+# --- Step 3: Grant executable permissions ---
+echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 3 of 4: Granting executable permissions..."
+sudo chmod +x "$DEST_PATH"
+if [ $? -eq 0 ]; then
+    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Permissions set successfully."
+else
+    echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Failed to set permissions. Try running with 'sudo'."
+    exit 1
+fi
+echo ""
+
+# --- Step 4: Verify installation ---
+echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 4 of 4: Verifying final installation..."
+if [ -f "$DEST_PATH" ] && [ -x "$DEST_PATH" ]; then
     echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Installation complete! '$BINARY_NAME' is ready."
     echo ""
     echo "You can now run '$BINARY_NAME' from any folder."
 else
-    echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Verification failed. File not found at destination."
+    echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Verification failed. File is not executable or not found."
     exit 1
 fi
