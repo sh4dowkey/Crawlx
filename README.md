@@ -147,7 +147,7 @@ Crawlx/
 
 ---
 
-## 🛣️ Roadmap
+## 🛣 Roadmap
 - [ ] Add support for robots.txt parsing  
 - [ ] Export results (JSON/CSV)  
 - [ ] Ignore filetypes (e.g., images, PDFs)  
@@ -173,10 +173,6 @@ This project is licensed under the **MIT License** – see the [LICENSE](LICENSE
 
 ---
 
-## 💡 Inspiration
-This project was created as part of a **learning roadmap** to master Go, concurrency, and system-level programming concepts in the context of a simple but powerful tool: a web crawler.
-
----
 
 <p align="center">⭐ If you like this project, give it a star on GitHub! ⭐</p>
 
