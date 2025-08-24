@@ -1,12 +1,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -23,86 +21,56 @@ const (
 )
 
 var (
-	visited       = make(map[string]bool)
-	mu            sync.Mutex
-	verbose       bool
-	totalCrawled  int
-	totalWarnings int
-	totalErrors   int
+	visited         = make(map[string]bool)
+	mu              sync.Mutex
+	verbose         bool
+	totalCrawled    int
+	totalWarnings   int
+	totalErrors     int
+	redirects       = make(map[string]bool)
+	externalLinks   = make(map[string]bool)
+	successfulPages = make(map[string]time.Duration)
+	allVisitedLinks = make(map[string]bool)
 )
 
-// Global http.Client for reusable connections with timeout.
 var httpClient = &http.Client{
 	Timeout: 10 * time.Second,
 }
 
-// init() is a special function that runs before `main`. It's a good place for flag definitions.
-func init() {
-	flag.BoolVar(&verbose, "verbose", false, "Enable verbose output with more details")
-}
-
-// parseAndValidateFlags handles all flag-related logic.
-func parseAndValidateFlags() (string, int) {
-	urlPtr := flag.String("url", "", "The URL where the crawler will start crawling")
-	flag.StringVar(urlPtr, "u", "", "The URL where the crawler will start crawling")
-
-	depthPtr := flag.Int("depth", 2, "The depth the crawler crawls the website ")
-	flag.IntVar(depthPtr, "d", 2, "The depth the crawler crawls the website")
-
-	flag.Parse()
-
-	if *urlPtr == "" {
-		fmt.Println("Error: The --url flag is required.")
-		fmt.Println()
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	if *depthPtr < 0 {
-		fmt.Println("Error: Crawl depth cannot be a negative value. Exiting...............................")
-		fmt.Println()
-		flag.Usage()
-		os.Exit(1)
-	}
-
-	return *urlPtr, *depthPtr
-}
-
 // checkAndResolveURL fetches a web page and returns its links and HTTP status code.
-func checkAndResolveURL(targetURL string) ([]string, int) {
+func checkAndResolveURL(targetURL string) ([]string, int, time.Duration) {
 	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
 		log.Printf("[WARNING] Unsupported protocol scheme: %s\n", targetURL)
-		return nil, 0
+		return nil, 0, 0
 	}
 
+	startTime := time.Now()
 	req, err := http.NewRequest("GET", targetURL, nil)
 	if err != nil {
 		log.Printf("[WARNING] Failed to create request for URL %s: %v\n", targetURL, err)
-		return nil, 0
+		return nil, 0, 0
 	}
-	// Set a User-Agent header
 	req.Header.Set("User-Agent", "Go-Web-Crawler/1.0")
 
 	res, err := httpClient.Do(req)
 	if err != nil {
 		log.Printf("[WARNING] Failed to fetch URL %s: %v\n", targetURL, err)
-		return nil, 0
+		return nil, 0, 0
 	}
 	defer res.Body.Close()
+	duration := time.Since(startTime)
 
 	if res.StatusCode >= 300 && res.StatusCode < 400 {
-		log.Printf("[WARNING] Redirect detected for %s (Status: %d)\n", targetURL, res.StatusCode)
-		return nil, res.StatusCode
+		return nil, res.StatusCode, duration
 	}
 
 	body, err := html.Parse(res.Body)
 	if err != nil {
-		log.Printf("[WARNING] Failed to parse HTML from %s: %v\n", targetURL, err)
-		return nil, res.StatusCode
+		return nil, res.StatusCode, duration
 	}
 	linkMap := extractLinks(body)
 	links := resolveLinks(linkMap, targetURL)
-	return links, res.StatusCode
+	return links, res.StatusCode, duration
 }
 
 // extractLinks recursively finds all links from <a> tags.
@@ -146,17 +114,13 @@ func resolveLinks(link map[string]bool, originalURL string) []string {
 
 // isSameDomain checks if the host of a link belongs to the base domain.
 func isSameDomain(linkHost, baseHost string) bool {
-	// The base host is a subdomain of itself.
 	if linkHost == baseHost {
 		return true
 	}
-	// Check if the link host ends with the base host.
-	// The `.` is important to prevent matching `sub.domain.com` with `maindomain.com`
 	return strings.HasSuffix(linkHost, "."+baseHost)
 }
 
 // Crawl is the main recursive function that performs the web crawl.
-// It now takes the original startURL as an argument for the host check.
 func Crawl(targetURL *url.URL, startURL *url.URL, initialDepth, currentDepth int) {
 	mu.Lock()
 	if visited[targetURL.String()] || currentDepth < 0 {
@@ -164,36 +128,42 @@ func Crawl(targetURL *url.URL, startURL *url.URL, initialDepth, currentDepth int
 		return
 	}
 	visited[targetURL.String()] = true
+	allVisitedLinks[targetURL.String()] = true
 	mu.Unlock()
 
-	indent := strings.Repeat("    ", initialDepth-currentDepth)
+	links, statusCode, duration := checkAndResolveURL(targetURL.String())
 
-	links, statusCode := checkAndResolveURL(targetURL.String())
-
+	mu.Lock()
 	if statusCode >= 400 {
 		totalErrors++
 	} else if statusCode >= 300 {
 		totalWarnings++
-	} else {
+		redirects[targetURL.String()] = true
+	} else if statusCode >= 200 && statusCode < 300 {
 		totalCrawled++
+		successfulPages[targetURL.String()] = duration
 	}
+	mu.Unlock()
 
-	var statusColor string
-	if statusCode >= 400 {
-		statusColor = ColorRed
-	} else if statusCode >= 300 {
-		statusColor = ColorYellow
-	} else {
-		statusColor = ColorGreen
+	indent := strings.Repeat("  ", initialDepth-currentDepth)
+	statusText := http.StatusText(statusCode)
+	if statusText == "" {
+		statusText = "Unknown Status"
 	}
-
-	fmt.Printf("%s[+] Crawling: %s (Depth %d)\n", indent, targetURL, initialDepth-currentDepth)
-	fmt.Printf("%s    %s[%d %s]%s Found %d links.\n", indent, statusColor, statusCode, http.StatusText(statusCode), ColorReset, len(links))
+	statusColor := getColor(statusCode)
 
 	if verbose {
-		for _, link := range links {
-			fmt.Printf("%s        Found Link: %s\n", indent, link)
+		fmt.Printf("%s[+] Crawling: %s (Depth %d)\n", indent, targetURL, initialDepth-currentDepth)
+		fmt.Printf("%s  ↳ [%s%d %s%s] Found %d links.\n", indent, statusColor, statusCode, statusText, ColorReset, len(links))
+		if len(links) > 0 {
+			fmt.Printf("%s  Links found: \n", indent)
+			for _, link := range links {
+				fmt.Printf("%s    - %s\n", indent, link)
+			}
 		}
+	} else {
+		// Non-verbose output with color applied to the status part.
+		fmt.Printf(" [%s%d %s%s] (%dms) %s\n", statusColor, statusCode, statusText, ColorReset, duration.Milliseconds(), targetURL)
 	}
 
 	for _, link := range links {
@@ -201,25 +171,91 @@ func Crawl(targetURL *url.URL, startURL *url.URL, initialDepth, currentDepth int
 		if err != nil {
 			continue
 		}
-		// Corrected check: use the new isSameDomain function.
-		if isSameDomain(parsedLink.Host, startURL.Host) {
-			Crawl(parsedLink, startURL, initialDepth, currentDepth-1)
+		if !isSameDomain(parsedLink.Host, startURL.Host) {
+			mu.Lock()
+			if parsedLink.Scheme == "mailto" || parsedLink.Scheme == "https" || parsedLink.Scheme == "http" {
+				externalLinks[link] = true
+			}
+			mu.Unlock()
+		} else {
+			mu.Lock()
+			if !visited[link] {
+				mu.Unlock()
+				Crawl(parsedLink, startURL, initialDepth, currentDepth-1)
+			} else {
+				mu.Unlock()
+			}
 		}
+	}
+}
+
+// getColor returns the appropriate ANSI color code for a given status code.
+func getColor(statusCode int) string {
+	if statusCode >= 400 {
+		return ColorRed
+	} else if statusCode >= 300 {
+		return ColorYellow
+	} else {
+		return ColorGreen
 	}
 }
 
 // printSummaryAndLinks displays the final summary and the list of visited links.
 func printSummaryAndLinks(duration time.Duration) {
-	fmt.Println("\n--- Crawl Complete ---")
-	fmt.Println()
-	fmt.Println("--- Crawl Summary ---")
-	fmt.Printf("- Crawled %d pages in %s.\n", totalCrawled, duration.Round(time.Millisecond))
-	fmt.Printf("- %sSuccess: %d pages%s\n", ColorGreen, totalCrawled, ColorReset)
-	fmt.Printf("- %sWarnings: %d pages%s\n", ColorYellow, totalWarnings, ColorReset)
-	fmt.Printf("- %sErrors: %d pages%s\n", ColorRed, totalErrors, ColorReset)
+	fmt.Println("\n" + strings.Repeat("=", 60))
+	fmt.Printf("%s\n%s CRAWL SITEMAP REPORT\n%s\n\n", ColorGreen, strings.Repeat(" ", 18), ColorReset)
+	fmt.Println(strings.Repeat("=", 60))
 
-	fmt.Println("\n--- Visited Links ---")
-	for url := range visited {
-		fmt.Printf("- Visited: %s\n", url)
+	fmt.Println("\n[+] Crawled Pages (200 OK)")
+	for url, dur := range successfulPages {
+		fmt.Printf("  - %s (%dms)  %s%s\n", url, dur.Milliseconds(), ColorGreen, ColorReset)
 	}
+
+	fmt.Println("\n\n" + strings.Repeat("-", 60) + "\n")
+	fmt.Println("[~] Redirects (3xx)")
+	if len(redirects) == 0 {
+		fmt.Println("  No redirects found.")
+	} else {
+		for url := range redirects {
+			fmt.Printf("  - %s\n", url)
+		}
+	}
+
+	fmt.Println("\n\n" + strings.Repeat("-", 60) + "\n")
+	fmt.Println("[✗] Client & Server Errors (4xx/5xx)")
+	if totalErrors == 0 {
+		fmt.Println("  No errors found.")
+	} else {
+		// Placeholder for detailed error reporting if needed later.
+	}
+
+	fmt.Println("\n\n" + strings.Repeat("-", 60) + "\n")
+	fmt.Println("[!] External Links")
+	if len(externalLinks) == 0 {
+		fmt.Println("  No external links found.")
+	} else {
+		for link := range externalLinks {
+			fmt.Printf("  - %s\n", link)
+		}
+	}
+
+	fmt.Println("\n\n" + strings.Repeat("=", 60) + "\n")
+	fmt.Println("Crawl Summary")
+	fmt.Printf("  - Crawled %d pages in %s.\n", totalCrawled, duration.Round(time.Millisecond))
+	fmt.Printf("  - %sSuccess:%s %d\n", ColorGreen, ColorReset, totalCrawled)
+	fmt.Printf("  - %sWarnings:%s %d\n", ColorYellow, ColorReset, totalWarnings)
+	fmt.Printf("  - %sErrors:%s %d\n", ColorRed, ColorReset, totalErrors)
+
+	fmt.Println("\n\n" + strings.Repeat("=", 60) + "\n")
+	fmt.Println("All Visited Links")
+	for url := range allVisitedLinks {
+		if _, ok := successfulPages[url]; ok {
+			fmt.Printf("  - [%s✓%s] %s\n", ColorGreen, ColorReset, url)
+		} else if _, ok := redirects[url]; ok {
+			fmt.Printf("  - [%s~%s] %s\n", ColorYellow, ColorReset, url)
+		} else {
+			fmt.Printf("  - [%s✗%s] %s\n", ColorRed, ColorReset, url)
+		}
+	}
+	fmt.Println("\n" + strings.Repeat("=", 60))
 }
