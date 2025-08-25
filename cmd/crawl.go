@@ -18,6 +18,9 @@ const (
 	ColorYellow = "\033[33m"
 	ColorRed    = "\033[31m"
 	ColorReset  = "\033[0m"
+	ColorBold   = "\033[1m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[97m"
 )
 
 var (

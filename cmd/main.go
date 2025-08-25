@@ -6,18 +6,38 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
-// `main` is now the orchestrator, delegating tasks to other functions.
+func customUsage() {
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
+	fmt.Printf("%sGO CRAWLER%s - A concurrent web crawler in Go\n", ColorBold+ColorCyan, ColorReset)
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
+
+	fmt.Printf("\n%sUSAGE%s:\n", ColorBold+ColorGreen, ColorReset)
+	fmt.Printf("  %sgo run . [OPTIONS]%s\n", ColorWhite, ColorReset)
+
+	fmt.Printf("\n%sOPTIONS%s:\n", ColorBold+ColorGreen, ColorReset)
+	flag.PrintDefaults()
+
+	fmt.Printf("\n%sEXAMPLES%s:\n", ColorBold+ColorGreen, ColorReset)
+	fmt.Printf("  %s# Crawl a website with default depth of 2\n", ColorWhite)
+	fmt.Printf("  go run . --url https://toscrape.com%s\n\n", ColorReset)
+	fmt.Printf("  %s# Crawl with a depth of 5 and verbose output\n", ColorWhite)
+	fmt.Printf("  go run . -u https://toscrape.com -d 5 --verbose%s\n", ColorReset)
+
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
+}
+
 func main() {
-	// 1. Parse and validate command-line flags.
+
+	flag.Usage = customUsage
+
 	startURLStr, initialDepth := parseAndValidateFlags()
 
-	// 2. Record the start time for the summary.
 	startTime := time.Now()
 
-	// 3. Parse the starting URL.
 	startURL, err := url.Parse(startURLStr)
 	if err != nil {
 		log.Fatalf("Error parsing initial URL: %v", err)
@@ -25,10 +45,8 @@ func main() {
 
 	fmt.Printf("[INFO] Starting crawl at: %s\n", time.Now().Format("3:04:05 PM MST"))
 
-	// 4. Start the crawl, passing the startURL twice.
 	Crawl(startURL, startURL, initialDepth, initialDepth)
 
-	// 5. Calculate and print the final summary.
 	duration := time.Since(startTime)
 	printSummaryAndLinks(duration)
 	os.Exit(0)
