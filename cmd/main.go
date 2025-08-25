@@ -10,26 +10,6 @@ import (
 	"time"
 )
 
-func customUsage() {
-	fmt.Printf("%s\n", strings.Repeat("━", 60))
-	fmt.Printf("%sGO CRAWLER%s - A concurrent web crawler in Go\n", ColorBold+ColorCyan, ColorReset)
-	fmt.Printf("%s\n", strings.Repeat("━", 60))
-
-	fmt.Printf("\n%sUSAGE%s:\n", ColorBold+ColorGreen, ColorReset)
-	fmt.Printf("  %sgo run . [OPTIONS]%s\n", ColorWhite, ColorReset)
-
-	fmt.Printf("\n%sOPTIONS%s:\n", ColorBold+ColorGreen, ColorReset)
-	flag.PrintDefaults()
-
-	fmt.Printf("\n%sEXAMPLES%s:\n", ColorBold+ColorGreen, ColorReset)
-	fmt.Printf("  %s# Crawl a website with default depth of 2\n", ColorWhite)
-	fmt.Printf("  go run . --url https://toscrape.com%s\n\n", ColorReset)
-	fmt.Printf("  %s# Crawl with a depth of 5 and verbose output\n", ColorWhite)
-	fmt.Printf("  go run . -u https://toscrape.com -d 5 --verbose%s\n", ColorReset)
-
-	fmt.Printf("%s\n", strings.Repeat("━", 60))
-}
-
 func main() {
 
 	flag.Usage = customUsage
@@ -50,6 +30,26 @@ func main() {
 	duration := time.Since(startTime)
 	printSummaryAndLinks(duration)
 	os.Exit(0)
+}
+
+func customUsage() {
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
+	fmt.Printf("%sGO CRAWLER%s - A concurrent web crawler in Go\n", ColorBold+ColorCyan, ColorReset)
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
+
+	fmt.Printf("\n%sUSAGE%s:\n", ColorBold+ColorGreen, ColorReset)
+	fmt.Printf("  %sgo run . [OPTIONS]%s\n", ColorWhite, ColorReset)
+
+	fmt.Printf("\n%sOPTIONS%s:\n", ColorBold+ColorGreen, ColorReset)
+	flag.PrintDefaults()
+
+	fmt.Printf("\n%sEXAMPLES%s:\n", ColorBold+ColorGreen, ColorReset)
+	fmt.Printf("  %s# Crawl a website with default depth of 2\n", ColorWhite)
+	fmt.Printf("  go run . --url https://toscrape.com%s\n\n", ColorReset)
+	fmt.Printf("  %s# Crawl with a depth of 5 and verbose output\n", ColorWhite)
+	fmt.Printf("  go run . -u https://toscrape.com -d 5 --verbose%s\n", ColorReset)
+
+	fmt.Printf("%s\n", strings.Repeat("━", 60))
 }
 
 // parseAndValidateFlags handles all flag-related logic.
