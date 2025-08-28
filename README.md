@@ -14,20 +14,6 @@
 
 ---
 
-## Table of Contents
-
-- [✨ Features](#-features)
-- [🚀 Quick Start](#-quick-start)
-- [📦 Installation](#-installation)
-- [🛠️ Usage](#️-usage)
-- [👨‍💻 For Developers (Building from Source)](#-for-developers-building-from-source)
-- [📂 Project Structure](#-project-structure)
-- [🛣️ Roadmap](#️-roadmap)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-
----
-
 ## ✨ Features
 
 - 🌐 **Recursive Crawling**: Explore web pages up to a user-defined depth.
@@ -224,7 +210,7 @@ If you want to modify the code, you'll need to build the project from the source
 
 1.  **Clone the Repository**
     ```bash
-    git clone [https://github.com/sh4dowkey/Crawlx.git](https://github.com/sh4dowkey/Crawlx.git)
+    git clone https://github.com/sh4dowkey/Crawlx.git
     cd Crawlx
     ```
 

@@ -103,7 +103,7 @@ main() {
         echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Installation complete! '$BINARY_NAME' is ready."
         echo ""
         echo "You can now run '$BINARY_NAME' from any folder."
-        echo "To uninstall, run: ${COLOR_YELLOW}bash setup.sh uninstall${COLOR_RESET}"
+        echo -e "To uninstall, run: ${COLOR_YELLOW}bash setup.sh uninstall${COLOR_RESET}"
     else
         echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Verification failed. Please check your system's PATH."
         exit 1
