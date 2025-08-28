@@ -127,297 +127,27 @@ crawlx -u https://toscrape.com -d 2 --verbose
 
 Example output:
 
-***crawlx.exe --url https://toscrape.com -d 1 --verbose***
+> ***crawlx.exe --url https:&#8203;//toscrape.com -d 1 --verbose***
+
 <details>
-<summary><strong>Click to see Example Output</strong></summary>
+<summary><strong>➡️ Click to see Example Output</strong></summary>
 
 ```
  
 [INFO] Starting crawl at: 11:43:13 AM IST
-[+] Crawling: https://toscrape.com (Depth 0)
+[+] Crawling: [https://toscrape.com](https://toscrape.com) (Depth 0)
   ↳ [200 OK] Found 10 links.
   Links found: 
-    - http://quotes.toscrape.com/
-    - http://quotes.toscrape.com/login
-    - http://quotes.toscrape.com/js
-    - http://quotes.toscrape.com/tableful
-    - http://quotes.toscrape.com/js-delayed
-    - http://quotes.toscrape.com/search.aspx
-    - http://quotes.toscrape.com/scroll
-    - http://quotes.toscrape.com
-    - http://quotes.toscrape.com/random
-    - http://books.toscrape.com
-  [+] Crawling: http://quotes.toscrape.com/ (Depth 1)
+    - [http://quotes.toscrape.com/](http://quotes.toscrape.com/)
+    - [http://books.toscrape.com](http://books.toscrape.com)
+    ...
+  [+] Crawling: [http://quotes.toscrape.com/](http://quotes.toscrape.com/) (Depth 1)
     ↳ [200 OK] Found 49 links.
-    Links found:
-      - http://quotes.toscrape.com/tag/simile/
-      - http://quotes.toscrape.com/author/Jane-Austen
-      - http://quotes.toscrape.com/tag/change/page/1/
-      - http://quotes.toscrape.com/tag/deep-thoughts/page/1/
-      - http://quotes.toscrape.com/tag/misattributed-eleanor-roosevelt/page/1/
-      - http://quotes.toscrape.com/tag/live/page/1/
-      - http://quotes.toscrape.com/login
-      - https://www.goodreads.com/quotes
-      - http://quotes.toscrape.com/tag/books/page/1/
-      - http://quotes.toscrape.com/tag/obvious/page/1/
-      - http://quotes.toscrape.com/tag/simile/page/1/
-      - http://quotes.toscrape.com/tag/miracles/page/1/
-      - http://quotes.toscrape.com/tag/be-yourself/page/1/
-      - http://quotes.toscrape.com/tag/humor/
-      - http://quotes.toscrape.com/tag/paraphrased/page/1/
-      - http://quotes.toscrape.com/tag/humor/page/1/
-      - http://quotes.toscrape.com/tag/thinking/page/1/
-      - http://quotes.toscrape.com/tag/books/
-      - http://quotes.toscrape.com/tag/adulthood/page/1/
-      - http://quotes.toscrape.com/tag/life/
-      - http://quotes.toscrape.com/tag/reading/
-      - http://quotes.toscrape.com/tag/edison/page/1/
-      - http://quotes.toscrape.com/tag/classic/page/1/
-      - http://quotes.toscrape.com/author/Marilyn-Monroe
-      - http://quotes.toscrape.com/tag/friends/
-      - http://quotes.toscrape.com/author/J-K-Rowling
-      - http://quotes.toscrape.com/tag/friendship/
-      - http://quotes.toscrape.com/author/Thomas-A-Edison
-      - http://quotes.toscrape.com/tag/truth/
-      - http://quotes.toscrape.com/tag/miracle/page/1/
-      - http://quotes.toscrape.com/author/Andre-Gide
-      - http://quotes.toscrape.com/tag/failure/page/1/
-      - http://quotes.toscrape.com/tag/world/page/1/
-      - http://quotes.toscrape.com/tag/inspirational/
-      - http://quotes.toscrape.com/tag/choices/page/1/
-      - http://quotes.toscrape.com/tag/love/page/1/
-      - http://quotes.toscrape.com/author/Albert-Einstein
-      - http://quotes.toscrape.com/tag/aliteracy/page/1/
-      - http://quotes.toscrape.com/page/2/
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/author/Eleanor-Roosevelt
-      - http://quotes.toscrape.com/tag/love/
-      - http://quotes.toscrape.com/author/Steve-Martin
-      - http://quotes.toscrape.com/tag/abilities/page/1/
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/tag/success/page/1/
-      - http://quotes.toscrape.com/tag/value/page/1/
-      - http://quotes.toscrape.com/tag/life/page/1/
-      - http://quotes.toscrape.com/tag/inspirational/page/1/
-  [+] Crawling: http://quotes.toscrape.com/login (Depth 1)
-    ↳ [200 OK] Found 4 links.
-    Links found:
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-      - https://www.goodreads.com/quotes
-      - https://www.zyte.com
-  [+] Crawling: http://quotes.toscrape.com/js (Depth 1)
-    ↳ [200 OK] Found 5 links.
-    Links found:
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-      - http://quotes.toscrape.com/js/page/2/
-      - https://www.goodreads.com/quotes
-  [+] Crawling: http://quotes.toscrape.com/tableful (Depth 1)
-    ↳ [200 OK] Found 35 links.
-    Links found:
-      - http://quotes.toscrape.com/tableful/page/2/
-      - http://quotes.toscrape.com/tableful/tag/live/page/1/
-      - http://quotes.toscrape.com/tableful/tag/aliteracy/page/1/
-      - http://quotes.toscrape.com/tableful/tag/classic/page/1/
-      - http://quotes.toscrape.com/tableful/tag/books/page/1/
-      - http://quotes.toscrape.com/tableful/tag/humor/page/1/
-      - http://quotes.toscrape.com/tableful/tag/miracle/page/1/
-      - http://quotes.toscrape.com/login
-      - http://quotes.toscrape.com/tableful/tag/be-yourself/page/1/
-      - http://quotes.toscrape.com/tableful/tag/choices/page/1/
-      - http://quotes.toscrape.com/tableful/tag/reading/page/1/
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/tableful/tag/truth/page/1/
-      - http://quotes.toscrape.com/tableful/tag/change/page/1/
-      - http://quotes.toscrape.com/tableful/tag/love/page/1/
-      - http://quotes.toscrape.com/tableful/tag/friends/page/1/
-      - http://quotes.toscrape.com/tableful/tag/thinking/page/1/
-      - http://quotes.toscrape.com/tableful/tag/life/page/1/
-      - http://quotes.toscrape.com/tableful/tag/failure/page/1/
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/tableful/tag/world/page/1/
-      - https://www.goodreads.com/quotes
-      - http://quotes.toscrape.com/tableful/tag/miracles/page/1/
-      - http://quotes.toscrape.com/tableful/tag/abilities/page/1/
-      - http://quotes.toscrape.com/tableful/tag/obvious/page/1/
-      - http://quotes.toscrape.com/tableful/tag/simile/page/1/
-      - http://quotes.toscrape.com/tableful/tag/inspirational/page/1/
-      - http://quotes.toscrape.com/tableful/tag/misattributed-eleanor-roosevelt/page/1/
-      - http://quotes.toscrape.com/tableful/tag/edison/page/1/
-      - http://quotes.toscrape.com/tableful/tag/success/page/1/
-      - http://quotes.toscrape.com/tableful/tag/paraphrased/page/1/
-      - http://quotes.toscrape.com/tableful/tag/deep-thoughts/page/1/
-      - http://quotes.toscrape.com/tableful/tag/adulthood/page/1/
-      - http://quotes.toscrape.com/tableful/tag/friendship/page/1/
-      - http://quotes.toscrape.com/tableful/tag/value/page/1/
-  [+] Crawling: http://quotes.toscrape.com/js-delayed (Depth 1)
-    ↳ [200 OK] Found 5 links.
-    Links found:
-      - https://www.goodreads.com/quotes
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-      - http://quotes.toscrape.com/js-delayed/page/2/
-  [+] Crawling: http://quotes.toscrape.com/search.aspx (Depth 1)
-    ↳ [200 OK] Found 4 links.
-    Links found:
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-      - https://www.goodreads.com/quotes
-      - https://www.zyte.com
-  [+] Crawling: http://quotes.toscrape.com/scroll (Depth 1)
-    ↳ [200 OK] Found 4 links.
-    Links found:
-      - https://www.zyte.com
-      - https://www.goodreads.com/quotes
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-  [+] Crawling: http://quotes.toscrape.com (Depth 1)
-    ↳ [200 OK] Found 49 links.
-    Links found:
-      - http://quotes.toscrape.com/page/2/
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/author/Albert-Einstein
-      - http://quotes.toscrape.com/author/J-K-Rowling
-      - http://quotes.toscrape.com/tag/misattributed-eleanor-roosevelt/page/1/
-      - http://quotes.toscrape.com/tag/world/page/1/
-      - http://quotes.toscrape.com/tag/miracle/page/1/
-      - http://quotes.toscrape.com/tag/deep-thoughts/page/1/
-      - https://www.goodreads.com/quotes
-      - http://quotes.toscrape.com/tag/adulthood/page/1/
-      - http://quotes.toscrape.com/tag/thinking/page/1/
-      - http://quotes.toscrape.com/tag/inspirational/
-      - http://quotes.toscrape.com/tag/life/page/1/
-      - http://quotes.toscrape.com/tag/simile/page/1/
-      - http://quotes.toscrape.com/tag/love/page/1/
-      - http://quotes.toscrape.com/tag/humor/
-      - http://quotes.toscrape.com/tag/failure/page/1/
-      - http://quotes.toscrape.com/tag/love/
-      - http://quotes.toscrape.com/tag/be-yourself/page/1/
-      - http://quotes.toscrape.com/tag/paraphrased/page/1/
-      - http://quotes.toscrape.com/tag/truth/
-      - http://quotes.toscrape.com/tag/aliteracy/page/1/
-      - http://quotes.toscrape.com/tag/classic/page/1/
-      - http://quotes.toscrape.com/tag/inspirational/page/1/
-      - http://quotes.toscrape.com/tag/value/page/1/
-      - http://quotes.toscrape.com/tag/live/page/1/
-      - http://quotes.toscrape.com/tag/simile/
-      - http://quotes.toscrape.com/tag/books/page/1/
-      - http://quotes.toscrape.com/tag/reading/
-      - http://quotes.toscrape.com/tag/abilities/page/1/
-      - http://quotes.toscrape.com/author/Steve-Martin
-      - http://quotes.toscrape.com/tag/success/page/1/
-      - http://quotes.toscrape.com/author/Jane-Austen
-      - http://quotes.toscrape.com/tag/humor/page/1/
-      - http://quotes.toscrape.com/tag/choices/page/1/
-      - http://quotes.toscrape.com/login
-      - http://quotes.toscrape.com/tag/friends/
-      - http://quotes.toscrape.com/author/Thomas-A-Edison
-      - http://quotes.toscrape.com/tag/miracles/page/1/
-      - http://quotes.toscrape.com/tag/edison/page/1/
-      - http://quotes.toscrape.com/tag/obvious/page/1/
-      - http://quotes.toscrape.com/tag/life/
-      - http://quotes.toscrape.com/tag/books/
-      - http://quotes.toscrape.com/tag/friendship/
-      - http://quotes.toscrape.com/author/Eleanor-Roosevelt
-      - http://quotes.toscrape.com/author/Marilyn-Monroe
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/tag/change/page/1/
-      - http://quotes.toscrape.com/author/Andre-Gide
-  [+] Crawling: http://quotes.toscrape.com/random (Depth 1)
-    ↳ [200 OK] Found 6 links.
-    Links found:
-      - http://quotes.toscrape.com/
-      - http://quotes.toscrape.com/login
-      - http://quotes.toscrape.com/tag/truth/page/1/
-      - https://www.goodreads.com/quotes
-      - https://www.zyte.com
-      - http://quotes.toscrape.com/author/J-K-Rowling
-  [+] Crawling: http://books.toscrape.com (Depth 1)
+    ...
+  [+] Crawling: [http://books.toscrape.com](http://books.toscrape.com) (Depth 1)
     ↳ [200 OK] Found 73 links.
-    Links found:
-      - http://books.toscrape.com/catalogue/page-2.html
-      - http://books.toscrape.com/catalogue/the-requiem-red_995/index.html
-      - http://books.toscrape.com/catalogue/category/books/academic_40/index.html
-      - http://books.toscrape.com/catalogue/category/books/sports-and-games_17/index.html
-      - http://books.toscrape.com/catalogue/soumission_998/index.html
-      - http://books.toscrape.com/catalogue/category/books/short-stories_45/index.html
-      - http://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html
-      - http://books.toscrape.com/catalogue/category/books/suspense_44/index.html
-      - http://books.toscrape.com/catalogue/category/books/childrens_11/index.html
-      - http://books.toscrape.com/catalogue/category/books/thriller_37/index.html
-      - http://books.toscrape.com/catalogue/category/books/contemporary_38/index.html
-      - http://books.toscrape.com/catalogue/category/books/sequential-art_5/index.html
-      - http://books.toscrape.com/catalogue/category/books/add-a-comment_18/index.html
-      - http://books.toscrape.com/catalogue/category/books/fiction_10/index.html
-      - http://books.toscrape.com/catalogue/scott-pilgrims-precious-little-life-scott-pilgrim-1_987/index.html
-      - http://books.toscrape.com/catalogue/category/books/fantasy_19/index.html
-      - http://books.toscrape.com/catalogue/category/books/nonfiction_13/index.html
-      - http://books.toscrape.com/catalogue/category/books/adult-fiction_29/index.html
-      - http://books.toscrape.com/catalogue/category/books/biography_36/index.html
-      - http://books.toscrape.com/catalogue/category/books/travel_2/index.html
-      - http://books.toscrape.com/catalogue/category/books/religion_12/index.html
-      - http://books.toscrape.com/catalogue/category/books/parenting_28/index.html
-      - http://books.toscrape.com/catalogue/category/books/womens-fiction_9/index.html
-      - http://books.toscrape.com/catalogue/category/books/historical_42/index.html
-      - http://books.toscrape.com/catalogue/mesaerion-the-best-science-fiction-stories-1800-1849_983/index.html
-      - http://books.toscrape.com/catalogue/category/books/psychology_26/index.html
-      - http://books.toscrape.com/catalogue/category/books/self-help_41/index.html
-      - http://books.toscrape.com/catalogue/the-boys-in-the-boat-nine-americans-and-their-epic-quest-for-gold-at-the-1936-berlin-olympics_992/index.html
-      - http://books.toscrape.com/catalogue/category/books/christian_43/index.html
-      - http://books.toscrape.com/catalogue/category/books/business_35/index.html
-      - http://books.toscrape.com/catalogue/category/books/poetry_23/index.html
-      - http://books.toscrape.com/catalogue/rip-it-up-and-start-again_986/index.html
-      - http://books.toscrape.com/catalogue/olio_984/index.html
-      - http://books.toscrape.com/catalogue/category/books/mystery_3/index.html
-      - http://books.toscrape.com/index.html
-      - http://books.toscrape.com/catalogue/category/books_1/index.html
-      - http://books.toscrape.com/catalogue/category/books/science_22/index.html
-      - http://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html
-      - http://books.toscrape.com/catalogue/category/books/autobiography_27/index.html
-      - http://books.toscrape.com/catalogue/category/books/art_25/index.html
-      - http://books.toscrape.com/catalogue/category/books/novels_46/index.html
-      - http://books.toscrape.com/catalogue/category/books/humor_30/index.html
-      - http://books.toscrape.com/catalogue/category/books/erotica_50/index.html
-      - http://books.toscrape.com/catalogue/category/books/philosophy_7/index.html
-      - http://books.toscrape.com/catalogue/category/books/food-and-drink_33/index.html
-      - http://books.toscrape.com/catalogue/sharp-objects_997/index.html
-      - http://books.toscrape.com/catalogue/category/books/horror_31/index.html
-      - http://books.toscrape.com/catalogue/category/books/music_14/index.html
-      - http://books.toscrape.com/catalogue/the-black-maria_991/index.html
-      - http://books.toscrape.com/catalogue/category/books/historical-fiction_4/index.html
-      - http://books.toscrape.com/catalogue/category/books/politics_48/index.html
-      - http://books.toscrape.com/catalogue/category/books/paranormal_24/index.html
-      - http://books.toscrape.com/catalogue/category/books/crime_51/index.html
-      - http://books.toscrape.com/catalogue/category/books/romance_8/index.html
-      - http://books.toscrape.com/catalogue/set-me-free_988/index.html
-      - http://books.toscrape.com/catalogue/its-only-the-himalayas_981/index.html
-      - http://books.toscrape.com/catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html
-      - http://books.toscrape.com/catalogue/category/books/christian-fiction_34/index.html
-      - http://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html
-      - http://books.toscrape.com/catalogue/the-coming-woman-a-novel-based-on-the-life-of-the-infamous-feminist-victoria-woodhull_993/index.html
-      - http://books.toscrape.com/catalogue/category/books/health_47/index.html
-      - http://books.toscrape.com/catalogue/category/books/default_15/index.html
-      - http://books.toscrape.com/catalogue/category/books/cultural_49/index.html
-      - http://books.toscrape.com/catalogue/category/books/science-fiction_16/index.html
-      - http://books.toscrape.com/catalogue/our-band-could-be-your-life-scenes-from-the-american-indie-underground-1981-1991_985/index.html
-      - http://books.toscrape.com/catalogue/category/books/new-adult_20/index.html
-      - http://books.toscrape.com/catalogue/category/books/young-adult_21/index.html
-      - http://books.toscrape.com/catalogue/category/books/spirituality_39/index.html
-      - http://books.toscrape.com/catalogue/category/books/history_32/index.html
-      - http://books.toscrape.com/catalogue/category/books/classics_6/index.html
-      - http://books.toscrape.com/catalogue/shakespeares-sonnets_989/index.html
-      - http://books.toscrape.com/catalogue/starving-hearts-triangular-trade-trilogy-1_990/index.html
-      - http://books.toscrape.com/catalogue/libertarianism-for-beginners_982/index.html
+    ...
 
-```
-
-</details>
-
-```
- 
 ============================================================
 
                    CRAWL SITEMAP REPORT
@@ -432,12 +162,7 @@ Example output:
   - http://quotes.toscrape.com/tableful (663ms)
   - http://quotes.toscrape.com/search.aspx (414ms)
   - http://quotes.toscrape.com (415ms)
-  - https://toscrape.com (1553ms)
-  - http://quotes.toscrape.com/js-delayed (895ms)
-  - http://quotes.toscrape.com/scroll (502ms)
-  - http://quotes.toscrape.com/random (369ms)
-  - http://books.toscrape.com (1041ms)
-
+  ...
 
 ------------------------------------------------------------
 
@@ -476,14 +201,15 @@ All Visited Links
   - [✓] http://quotes.toscrape.com/scroll
   - [✓] http://quotes.toscrape.com/random
   - [✓] http://books.toscrape.com
-  - [✓] https://toscrape.com
-  - [✓] http://quotes.toscrape.com/
-  - [✓] http://quotes.toscrape.com/login
-  - [✓] http://quotes.toscrape.com/tableful
-  - [✓] http://quotes.toscrape.com
+  ...
 
 ============================================================.
 ```
+
+</details>
+
+
+ 
 
 ---
 
