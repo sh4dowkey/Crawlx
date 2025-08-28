@@ -218,7 +218,7 @@ All Visited Links
 If you want to modify the code, you'll need to build the project from the source.
 
 **Prerequisites:**
-* [Git](https://git-scm.com/downloads)
+* [Git](https://git-scm.com/downloads)   ➡️ **[Official Go Installation Guide](https://go.dev/doc/install)**
 * [Go](https://go.dev/dl/) version 1.22+
 * [Make](https://www.gnu.org/software/make/) (usually pre-installed on Linux/macOS)
 
