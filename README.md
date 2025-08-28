@@ -224,7 +224,7 @@ If you want to modify the code, you'll need to build the project from the source
 
 1.  **Clone the Repository**
     ```bash
-    git clone [https://github.com/sh4dowkey/Crawlx.git](https://github.com/sh4dowkey/Crawlx.git)
+    git clone https://github.com/sh4dowkey/Crawlx.git
     cd Crawlx
     ```
 
