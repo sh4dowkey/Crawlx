@@ -14,19 +14,6 @@
 
 ---
 
-## Table of Contents
-
-- [✨ Features](#-features)
-- [🚀 Quick Start](#-quick-start)
-- [📦 Installation](#-installation)
-- [🛠️ Usage](#️-usage)
-- [👨‍💻 For Developers (Building from Source)](#-for-developers-building-from-source)
-- [📂 Project Structure](#-project-structure)
-- [🛣️ Roadmap](#️-roadmap)
-- [🤝 Contributing](#-contributing)
-- [📜 License](#-license)
-
----
 
 ## ✨ Features
 
