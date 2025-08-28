@@ -1,0 +1,18 @@
+# .gitattributes
+
+# Set the default behavior to automatically handle line endings.
+* text=auto
+
+# Explicitly force Go source files to use LF line endings.
+# This is a common best practice for Go projects.
+*.go text eol=lf
+
+# CRITICAL: Force shell scripts to always use LF line endings.
+# This prevents them from breaking on Linux and macOS.
+*.sh text eol=lf
+
+# Force PowerShell scripts to always use CRLF line endings, as is standard for Windows.
+*.ps1 text eol=crlf
+
+# Ensure Makefiles use LF line endings, as they are often used in LF-based environments.
+Makefile text eol=lf
