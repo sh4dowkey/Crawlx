@@ -18,11 +18,12 @@
 ## ✨ Features
 
 - 🌐 **Recursive Crawling**: Explore web pages up to a user-defined depth.
+- 🛡️ **Advanced URL Validation**: Robust pre-flight checks to handle malformed URLs and user input errors.
 - ⚡ **Concurrency (In Progress)**: Designed to crawl multiple links in parallel for maximum speed.
 - 🎨 **Colored CLI Output**: User-friendly and readable terminal output.
-- 🔧 **Customizable Flags**: Configure the starting URL, crawl depth, and verbosity.
+- 🔧 **Customizable Flags**: Configure the URL, depth, verbosity, and allow IP address crawling.
 - 🔗 **URL Resolution**: Correctly converts relative links into absolute, crawlable URLs.
-- 🛡️ **Graceful Error Handling**: Skips broken links and handles HTTP errors without crashing.
+- 📋 **Categorized Error Reporting**: The final report distinguishes between HTTP errors and Network/Parsing failures.
 
 ---
 
@@ -92,6 +93,7 @@ That's it! Once the script finishes, open a **new** terminal window, and you wil
 |---|---|---|---|
 | `--url` | `-u` | The starting URL to crawl **(required)** | |
 | `--depth` | `-d` | The maximum depth for recursive crawling | `2` |
+| `--allow-ip` | `-i` | Allow crawling a host that is an IP address | `false` |
 | `--verbose` | | Enable detailed, verbose output | `false` |
 
 ### Examples
@@ -107,7 +109,13 @@ crawlx -u [https://toscrape.com](https://toscrape.com) -d 3
 crawlx -u https://toscrape.com -d 3
 ```
 
-**3. Verbose crawl:**
+**3. Crawl an IP address:**
+
+```bash
+crawlx -u [http://127.0.0.1:8000](http://127.0.0.1:8000) -d 2 -i
+```
+
+**4. Verbose crawl:**
 ```bash
 crawlx -u https://toscrape.com -d 2 --verbose
 ```
@@ -160,8 +168,13 @@ Example output:
 ------------------------------------------------------------
 
 [✗] Client & Server Errors (4xx/5xx)
-  No errors found.
+  No server-side errors encountered.
 
+------------------------------------------------------------
+
+[!] Network & Parsing Failures
+  - https://gghfy.c0m (failed to fetch URL: Get "https://gghfy.c0m": dial tcp: lookup gghfy.c0m: no such host)
+  ...
 
 ------------------------------------------------------------
 
@@ -176,7 +189,7 @@ Crawl Summary
   - Crawled 11 pages in 8.648s.
   - Success: 11
   - Warnings: 0
-  - Errors: 0
+  - Errors: 3
 
 
 ============================================================
