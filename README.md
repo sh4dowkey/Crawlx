@@ -1,17 +1,17 @@
+<div align="center">
+
 # CrawlX 🕷️
 
-<div align="center">
+
 
 **A fast, concurrent web crawler built in Go**
 
-[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go)](https://golang.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/sh4dowkey/crawlx?style=flat-square)](https://github.com/sh4dowkey/crawlx/releases/latest)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/sh4dowkey/crawlx/build.yml?style=flat-square)](https://github.com/sh4dowkey/crawlx/actions)
+[![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+![Code Size](https://img.shields.io/github/languages/code-size/sh4dowkey/CrawlX?style=for-the-badge)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)
 
 *Professional web crawling with concurrent processing and intelligent error handling*
-
-[🚀 Quick Start](#installation) • [📖 Documentation](#usage) • [🤝 Contributing](#contributing) • [📋 Releases](https://github.com/sh4dowkey/crawlx/releases)
 
 </div>
 
@@ -49,6 +49,7 @@ Whether you're doing SEO analysis, testing website deployments, or conducting se
    
    # Windows (Run as Administrator)
    # Extract ZIP file
+   Set-ExecutionPolicy Bypass -Scope Process -Force
    .\scripts\setup.ps1
    ```
 
@@ -66,14 +67,13 @@ For developers who want to modify the code or contribute:
 git clone https://github.com/sh4dowkey/crawlx.git
 cd crawlx
 
-# Build for current OS
+The compiled binaries will be placed in the `./dist/` folder.
+# Build for your current OS
 make build
 
-# Build for all platforms  
+# Or, build for all platforms
 make build-all
 
-# Run directly (development)
-make run
 ```
 
 ## 🚀 Usage
@@ -264,8 +264,7 @@ We welcome contributions from developers of all skill levels! Here's how to get 
 ```bash
 git clone https://github.com/yourusername/crawlx.git
 cd crawlx
-go mod download
-make run  # Test your changes
+go run ./cmd/crawlx/main.go -u https://example.com  # Test if it is working
 ```
 
 ### Ways to Contribute
