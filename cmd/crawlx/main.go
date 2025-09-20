@@ -28,22 +28,25 @@ func main() {
 	flag.Usage = customUsage
 	flag.Parse()
 
+	// Validate the URL
 	startURL, err := validateURL(urlStr, allowIP)
 	if err != nil {
-		fmt.Printf("\n%sValidation Error: %v%s\n", util.ColorRed, err, util.ColorReset)
-		flag.Usage()
+		fmt.Printf("%sError:%s %v\n", util.ColorRed, util.ColorReset, err)
 		os.Exit(1)
 	}
 
+	// Set verbose mode before crawling
 	crawl.Verbose = verbose
 
+	// Simple startup message
+	fmt.Printf("Crawling %s (depth: %d)\n", startURL.String(), depth)
+
+	// Start the concurrent crawl
 	startTime := time.Now()
-	fmt.Printf("[INFO] Starting crawl at: %s\n", time.Now().Format("3:04:05 PM MST"))
-
-	// Simple, direct call to the crawl manager.
 	crawl.Crawl(startURL, depth)
-
 	duration := time.Since(startTime)
+
+	// Print summary
 	crawl.PrintSummaryAndLinks(duration)
 	os.Exit(0)
 }
@@ -52,10 +55,13 @@ func main() {
 func setupFlags() {
 	flag.StringVar(&urlStr, "url", "", "The starting URL to crawl.")
 	flag.StringVar(&urlStr, "u", "", "The starting URL to crawl (shorthand).")
+
 	flag.IntVar(&depth, "depth", 2, "The maximum depth for recursive crawling.")
 	flag.IntVar(&depth, "d", 2, "The maximum depth for recursive crawling (shorthand).")
+
 	flag.BoolVar(&verbose, "verbose", false, "Enable detailed, verbose output.")
 	flag.BoolVar(&verbose, "v", false, "Enable detailed, verbose output (shorthand).")
+
 	flag.BoolVar(&allowIP, "allow-ip", false, "Allow crawling a host that is an IP address.")
 	flag.BoolVar(&allowIP, "i", false, "Allow crawling a host that is an IP address (shorthand).")
 }
@@ -65,20 +71,26 @@ func validateURL(rawURL string, ipAllowed bool) (*url.URL, error) {
 	if rawURL == "" {
 		return nil, errors.New("the --url flag is required")
 	}
+
 	if strings.Count(rawURL, "://") > 1 {
 		return nil, errors.New("malformed URL: multiple '://' sequences found")
 	}
+
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse URL: %w", err)
 	}
+
 	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
 		return nil, errors.New("invalid URL scheme, please use http:// or https://")
 	}
+
 	if parsedURL.Host == "" {
 		return nil, errors.New("invalid URL, the host (domain name) is missing")
 	}
+
 	isIP, _ := regexp.MatchString(`^[0-9\.]+$`, parsedURL.Host)
+
 	if isIP {
 		if !ipAllowed {
 			return nil, errors.New("crawling IP addresses is not allowed, use the --allow-ip flag to enable")
@@ -96,23 +108,27 @@ func validateURL(rawURL string, ipAllowed bool) (*url.URL, error) {
 			return nil, fmt.Errorf("invalid TLD '%s', cannot be a number", tld)
 		}
 	}
+
 	return parsedURL, nil
 }
 
-// customUsage prints a professional, clean, and dynamic help message.
+// customUsage prints a clean help message.
 func customUsage() {
 	progName := filepath.Base(os.Args[0])
-	fmt.Printf("\n%sCrawlX%s - A fast, concurrent web crawler built in Go.\n", util.ColorBold+util.ColorCyan, util.ColorReset)
-	fmt.Printf("\n%sUSAGE:%s\n", util.ColorBold+util.ColorGreen, util.ColorReset)
+
+	fmt.Printf("\nCrawlX - A fast, concurrent web crawler built in Go.\n")
+
+	fmt.Printf("\nUSAGE:\n")
 	fmt.Printf("  %s -u <STARTING_URL> [OPTIONS]\n", progName)
-	fmt.Printf("\n%sOPTIONS:%s\n", util.ColorBold+util.ColorGreen, util.ColorReset)
-	fmt.Printf("  -u, --url <string>      The starting URL to crawl. (Required)\n")
-	fmt.Printf("  -d, --depth <int>       The maximum depth for recursive crawling. (Default: 2)\n")
-	fmt.Printf("  -i, --allow-ip          Allow crawling a host that is an IP address. (Default: false)\n")
-	fmt.Printf("  -v, --verbose           Enable detailed, verbose output. (Default: false)\n")
-	fmt.Printf("\n%sEXAMPLES:%s\n", util.ColorBold+util.ColorGreen, util.ColorReset)
-	fmt.Printf("  %s# Crawl a website with a depth of 3\n", util.ColorWhite)
-	fmt.Printf("  %s -u https://toscrape.com -d 3\n\n", progName)
-	fmt.Printf("  %s# Crawl with verbose output\n", util.ColorWhite)
-	fmt.Printf("  %s --url https://example.com --verbose\n", progName)
+
+	fmt.Printf("\nOPTIONS:\n")
+	fmt.Printf("  -u, --url <string>      The starting URL to crawl (Required)\n")
+	fmt.Printf("  -d, --depth <int>       Maximum crawling depth (Default: 2)\n")
+	fmt.Printf("  -i, --allow-ip          Allow crawling IP addresses (Default: false)\n")
+	fmt.Printf("  -v, --verbose           Show detailed crawl progress (Default: false)\n")
+
+	fmt.Printf("\nEXAMPLES:\n")
+	fmt.Printf("  %s -u https://example.com -d 3\n", progName)
+	fmt.Printf("  %s -u https://toscrape.com -d 2 --verbose\n", progName)
+	fmt.Printf("  %s -u http://127.0.0.1:8000 -d 1 --allow-ip\n", progName)
 }

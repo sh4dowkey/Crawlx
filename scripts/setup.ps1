@@ -1,139 +1,237 @@
-param([switch]$Uninstall)
+param(
+    [switch]$Uninstall,
+    [switch]$Help,
+    [switch]$Force
+)
 
-# Requires administrator privileges to run for PATH modification.
-# To run, right-click the file and select "Run with PowerShell as Administrator"
+# CrawlX Installation Script for Windows
+# Version: 2.0
+# Requires Administrator privileges
 
-# --- Configuration ---
-$binaryName = "crawlx.exe"
-$sourcePath = ".\dist\$binaryName"
-$installDir = "$env:LOCALAPPDATA\Programs\crawlx" # Recommended install location
-$destPath = "$installDir\$binaryName"
-$oldSystem32Path = "C:\Windows\System32\$binaryName" # Path for the old, incorrect location
+#Requires -RunAsAdministrator
 
-# --- Banner Function ---
-Function Get-CrawlxBanner {
-    # (Your awesome ASCII art banner remains the same)
-    $banner = @"
-======================================
-                                                                        
- @@@@@@@  @@@@@@@    @@@@@@   @@@  @@@  @@@  @@@          @@@  @@@  
-@@@@@@@@  @@@@@@@@  @@@@@@@@  @@@  @@@  @@@  @@@          @@@  @@@  
-!@@       @@!  @@@  @@!  @@@  @@!  @@!  @@!  @@!          @@!  !@@  
-!@!       !@!  @!@  !@!  @!@  !@!  !@!  !@!  !@!          !@!  @!!  
-!@!       @!@!!@!   @!@!@!@!  @!!  !!@  @!@  @!!           !@@!@!   
-!!!       !!@!@!    !!!@!!!!  !@!  !!!  !@!  !!!            @!!!    
-:!!       !!: :!!   !!:  !!!  !!:  !!:  !!:  !!:           !: :!!   
-:!:       :!:  !:!  :!:  !:!  :!:  :!:  :!:   :!:         :!:  !:!  
- ::: :::  ::   :::  ::   :::   :::: :: :::    :: ::::      ::  :::  
- :: :: :   :   : :   :   : :    :: :  : :    : :: : :      :   ::   
- 
-======================================
-"@
-    return $banner
+$Config = @{
+    BinaryName = "crawlx.exe"
+    SourcePath = ".\dist\crawlx.exe"
+    InstallDir = "$env:LOCALAPPDATA\Programs\crawlx"
+    LegacyPath = "C:\Windows\System32\crawlx.exe"
+    ScriptVersion = "2.0"
 }
 
-# --- Main Installation Logic ---
-Function Install-Crawlx {
-    Write-Host (Get-CrawlxBanner) -ForegroundColor Cyan
-    Write-Host "         CRAWLX CLI INSTALLER" -ForegroundColor Cyan
-    Write-Host ""
+$DestPath = "$($Config.InstallDir)\$($Config.BinaryName)"
 
-    # --- Step 1: Clean up old versions ---
-    Write-Host ">> Step 1 of 5: Checking for legacy installations..." -ForegroundColor Yellow
-    if (Test-Path $oldSystem32Path) {
-        Write-Host "[INFO] Found old version in System32. Removing it..." -ForegroundColor Cyan
-        try {
-            Remove-Item -Path $oldSystem32Path -Force -ErrorAction Stop
-            Write-Host "[OK] Legacy version removed successfully." -ForegroundColor Green
-        } catch {
-            Write-Host "[FAIL] Could not remove legacy version at '$oldSystem32Path'. Please remove it manually." -ForegroundColor Red
-            exit 1
-        }
+# Logging functions
+function Write-LogInfo { param([string]$Message); Write-Host "[INFO] $Message" -ForegroundColor Blue }
+function Write-LogSuccess { param([string]$Message); Write-Host "[SUCCESS] $Message" -ForegroundColor Green }
+function Write-LogWarning { param([string]$Message); Write-Host "[WARNING] $Message" -ForegroundColor Yellow }
+function Write-LogError { param([string]$Message); Write-Host "[ERROR] $Message" -ForegroundColor Red }
+function Write-LogStep { param([string]$Message); Write-Host ">>> $Message" -ForegroundColor Cyan }
+
+function Show-Banner {
+    Write-Host "`n================================================================================" -ForegroundColor Cyan
+    Write-Host "  CrawlX Installation Script v$($Config.ScriptVersion)" -ForegroundColor Cyan
+    Write-Host "  Fast, concurrent web crawler built in Go" -ForegroundColor White
+    Write-Host "  https://github.com/sh4dowkey/crawlx" -ForegroundColor White
+    Write-Host "================================================================================`n" -ForegroundColor Cyan
+}
+
+function Test-SystemRequirements {
+    Write-LogStep "Checking system requirements"
+    
+    # Check PowerShell version
+    if ($PSVersionTable.PSVersion.Major -lt 5) {
+        Write-LogError "PowerShell 5.0 or higher required"
+        throw "Incompatible PowerShell version"
+    }
+    
+    # Check if running as Administrator
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-LogError "Administrator privileges required"
+        throw "Run PowerShell as Administrator"
+    }
+    
+    Write-LogSuccess "System requirements verified"
+}
+
+function Find-Binary {
+    Write-LogStep "Detecting binary file"
+    
+    if (Test-Path $Config.SourcePath) {
+        $fileInfo = Get-Item $Config.SourcePath
+        $fileSizeMB = [math]::Round($fileInfo.Length / 1MB, 2)
+        Write-LogSuccess "Found binary: $($Config.SourcePath) (${fileSizeMB}MB)"
+        return $true
+    }
+    
+    Write-LogError "Binary not found at: $($Config.SourcePath)"
+    Write-LogError "Expected structure:"
+    Write-Host "  folder/" -ForegroundColor Gray
+    Write-Host "    ├── dist/" -ForegroundColor Gray
+    Write-Host "    │   └── crawlx.exe" -ForegroundColor Gray
+    Write-Host "    └── scripts/" -ForegroundColor Gray
+    Write-Host "        └── setup.ps1" -ForegroundColor Gray
+    throw "Binary not found"
+}
+
+function Remove-ExistingInstallations {
+    Write-LogStep "Checking for existing installations"
+    
+    $removed = @()
+    
+    # Remove current installation
+    if (Test-Path $DestPath) {
+        Remove-Item $DestPath -Force -ErrorAction SilentlyContinue
+        $removed += $DestPath
+    }
+    
+    # Remove legacy installation
+    if (Test-Path $Config.LegacyPath) {
+        Remove-Item $Config.LegacyPath -Force -ErrorAction SilentlyContinue
+        $removed += $Config.LegacyPath
+    }
+    
+    if ($removed.Count -gt 0) {
+        Write-LogInfo "Removed existing installations: $($removed.Count)"
     } else {
-        Write-Host "[OK] No legacy installation found." -ForegroundColor Green
+        Write-LogInfo "No existing installation found"
     }
-    Write-Host ""
+}
 
-    # --- Step 2: Check for binary ---
-    Write-Host ">> Step 2 of 5: Verifying binary location..." -ForegroundColor Yellow
-    if (-not (Test-Path $sourcePath)) {
-        Write-Host "[FAIL] Binary not found at '$sourcePath'." -ForegroundColor Red
-        exit 1
+function Install-Binary {
+    Write-LogStep "Installing binary"
+    
+    # Create install directory
+    if (-not (Test-Path $Config.InstallDir)) {
+        New-Item -Path $Config.InstallDir -ItemType Directory -Force | Out-Null
     }
-    Write-Host "[OK] Binary found." -ForegroundColor Green
-    Write-Host ""
+    
+    # Copy binary
+    Copy-Item -Path $Config.SourcePath -Destination $DestPath -Force
+    Write-LogSuccess "Binary installed to: $DestPath"
+}
 
-    # --- Step 3: Create installation directory ---
-    Write-Host ">> Step 3 of 5: Creating installation directory..." -ForegroundColor Yellow
-    if (-not (Test-Path $installDir)) {
-        New-Item -Path $installDir -ItemType Directory | Out-Null
+function Update-SystemPath {
+    Write-LogStep "Updating system PATH"
+    
+    $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    
+    if ($currentPath -notlike "*$($Config.InstallDir)*") {
+        $newPath = "$currentPath;$($Config.InstallDir)"
+        [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+        $env:PATH += ";$($Config.InstallDir)"
+        Write-LogSuccess "Added to PATH"
+        Write-LogWarning "Restart terminal for PATH changes to take effect"
+    } else {
+        Write-LogInfo "Already in PATH"
     }
-    Write-Host "[OK] Directory '$installDir' is ready." -ForegroundColor Green
-    Write-Host ""
+}
 
-    # --- Step 4: Copy binary ---
-    Write-Host ">> Step 4 of 5: Copying file..." -ForegroundColor Yellow
-    try {
-        Copy-Item -Path $sourcePath -Destination $destPath -Force -ErrorAction Stop
-        Write-Host "[OK] File copied successfully." -ForegroundColor Green
-    } catch {
-        Write-Host "[FAIL] Installation failed: $_" -ForegroundColor Red
-        exit 1
+function Test-Installation {
+    Write-LogStep "Verifying installation"
+    
+    if (-not (Test-Path $DestPath)) {
+        throw "Installation verification failed"
     }
-    Write-Host ""
+    
+    Write-LogSuccess "Installation completed successfully!"
+    Write-Host "  Binary location: $DestPath" -ForegroundColor White
+    Write-Host "  Installation directory: $($Config.InstallDir)" -ForegroundColor White
+}
 
-    # --- Step 5: Add to User PATH ---
-    Write-Host ">> Step 5 of 5: Adding to your PATH..." -ForegroundColor Yellow
-    try {
-        $currentUserPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-        if (-not ($currentUserPath -split ';' -contains $installDir)) {
-            $newUserPath = $currentUserPath + ";" + $installDir
-            [System.Environment]::SetEnvironmentVariable("PATH", $newUserPath, "User")
-            Write-Host "[OK] Installation path added to your User PATH." -ForegroundColor Green
-            Write-Host "       Please restart your terminal for the changes to take effect." -ForegroundColor Yellow
-        } else {
-            Write-Host "[INFO] Path is already configured." -ForegroundColor Cyan
+function Show-UsageInfo {
+    Write-Host "`n=== QUICK START ===" -ForegroundColor Green
+    Write-Host "Basic usage:" -ForegroundColor White
+    Write-Host "  crawlx -u https://example.com" -ForegroundColor Yellow
+    Write-Host "Deep crawl:" -ForegroundColor White  
+    Write-Host "  crawlx -u https://example.com -d 3 --verbose" -ForegroundColor Yellow
+    Write-Host "`n=== NEXT STEPS ===" -ForegroundColor Green
+    Write-Host "1. Open a new PowerShell window" -ForegroundColor White
+    Write-Host "2. Try: crawlx -u https://example.com -d 1" -ForegroundColor Yellow
+    Write-Host "3. Get help: crawlx --help" -ForegroundColor White
+    Write-Host "`nTo uninstall: .\scripts\setup.ps1 -Uninstall`n" -ForegroundColor Gray
+}
+
+function Uninstall-CrawlX {
+    Write-LogStep "Starting uninstallation"
+    
+    $removed = @()
+    
+    # Remove main installation
+    if (Test-Path $DestPath) {
+        Remove-Item $DestPath -Force
+        $removed += $DestPath
+    }
+    
+    # Remove installation directory if empty
+    if (Test-Path $Config.InstallDir) {
+        $contents = Get-ChildItem $Config.InstallDir -ErrorAction SilentlyContinue
+        if ($contents.Count -eq 0) {
+            Remove-Item $Config.InstallDir -Force
+            $removed += $Config.InstallDir
         }
+    }
+    
+    # Remove legacy installation
+    if (Test-Path $Config.LegacyPath) {
+        Remove-Item $Config.LegacyPath -Force -ErrorAction SilentlyContinue
+        $removed += $Config.LegacyPath
+    }
+    
+    # Clean PATH
+    $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $pathEntries = $currentPath -split ';' | Where-Object { $_ -ne $Config.InstallDir }
+    $newPath = $pathEntries -join ';'
+    [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+    
+    Write-LogSuccess "Uninstallation completed"
+    Write-LogInfo "Removed $($removed.Count) item(s)"
+}
+
+function Install-CrawlX {
+    Show-Banner
+    
+    try {
+        Test-SystemRequirements
+        Find-Binary
+        Remove-ExistingInstallations
+        Install-Binary
+        Update-SystemPath
+        Test-Installation
+        Show-UsageInfo
+        
     } catch {
-        Write-Host "[FAIL] Could not modify PATH: $_" -ForegroundColor Red
-        Write-Host "       Tip: Ensure you are running this script as an Administrator." -ForegroundColor Yellow
+        Write-LogError "Installation failed: $($_.Exception.Message)"
+        Write-LogError "Solutions:"
+        Write-LogError "1. Run as Administrator"
+        Write-LogError "2. Check binary exists in .\dist\"
+        Write-LogError "3. Try with -Force flag"
         exit 1
     }
-    
-    Write-Host ""
-    Write-Host "Installation Complete! You can now run 'crawlx' from a new terminal." -ForegroundColor Cyan
-    Write-Host "To uninstall, run: powershell.exe -File setup.ps1 -Uninstall" -ForegroundColor Yellow
 }
 
-# --- Uninstallation Logic ---
-Function Uninstall-Crawlx {
-    # (Uninstallation logic remains the same)
-    Write-Host "Starting uninstallation of crawlx..." -ForegroundColor Yellow
-    
-    $currentUserPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-    if ($currentUserPath -split ';' -contains $installDir) {
-        $newUserPath = ($currentUserPath -split ';') | Where-Object { $_ -ne $installDir } | ForEach-Object { "$_" }
-        $newUserPath = $newUserPath -join ';'
-        [System.Environment]::SetEnvironmentVariable("PATH", $newUserPath, "User")
-        Write-Host "[OK] Removed from User PATH." -ForegroundColor Green
-    }
-
-    if (Test-Path $installDir) {
-        Remove-Item -Path $installDir -Recurse -Force
-        Write-Host "[OK] Removed installation directory." -ForegroundColor Green
-    }
-
-    if (Test-Path $oldSystem32Path) {
-        Remove-Item -Path $oldSystem32Path -Force -ErrorAction SilentlyContinue
-        Write-Host "[OK] Removed legacy System32 file." -ForegroundColor Green
-    }
-
-    Write-Host "Uninstallation complete. Please restart your terminal." -ForegroundColor Cyan
+function Show-Help {
+    Write-Host "CrawlX Installation Script v$($Config.ScriptVersion)" -ForegroundColor Cyan
+    Write-Host "`nUSAGE:" -ForegroundColor Yellow
+    Write-Host "  .\scripts\setup.ps1                Install CrawlX"
+    Write-Host "  .\scripts\setup.ps1 -Uninstall     Remove CrawlX"  
+    Write-Host "  .\scripts\setup.ps1 -Help          Show this help"
+    Write-Host "`nREQUIREMENTS:" -ForegroundColor Yellow
+    Write-Host "  - Administrator privileges"
+    Write-Host "  - PowerShell 5.0+"
+    Write-Host "  - Windows 10+ (recommended)"
+    Write-Host "`nEXAMPLES:" -ForegroundColor Yellow
+    Write-Host "  .\scripts\setup.ps1           # Install"
+    Write-Host "  .\scripts\setup.ps1 -Force    # Force install"
+    Write-Host "  .\scripts\setup.ps1 -Uninstall # Remove"
 }
 
-# --- Script Entry Point ---
-if ($Uninstall) {
-    Uninstall-Crawlx
-} else {
-    Install-Crawlx
+# Main execution
+try {
+    if ($Help) { Show-Help }
+    elseif ($Uninstall) { Show-Banner; Uninstall-CrawlX }
+    else { Install-CrawlX }
+} catch {
+    Write-LogError "Script failed: $($_.Exception.Message)"
+    exit 1
 }

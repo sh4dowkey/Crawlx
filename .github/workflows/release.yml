@@ -1,0 +1,284 @@
+name: Build and Release CrawlX
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+    inputs:
+      tag_name:
+        description: 'Release tag name (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+env:
+  GO_VERSION: '1.22'
+  BINARY_NAME: 'crawlx'
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: ''
+          - goos: linux
+            goarch: arm64
+            suffix: ''
+          - goos: darwin
+            goarch: amd64
+            suffix: ''
+          - goos: darwin
+            goarch: arm64
+            suffix: ''
+          - goos: windows
+            goarch: amd64
+            suffix: '.exe'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Get dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test ./...
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        binary_name="${{ env.BINARY_NAME }}${{ matrix.suffix }}"
+        output_name="${{ env.BINARY_NAME }}-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.suffix }}"
+        
+        echo "Building ${output_name}..."
+        go build -ldflags="-w -s" -o "dist/${binary_name}" ./cmd/crawlx
+        
+        # Create directory structure for each platform
+        mkdir -p "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/dist"
+        mkdir -p "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/scripts"
+        
+        # Copy binary to dist folder
+        cp "dist/${binary_name}" "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/dist/"
+        
+        # Copy appropriate setup script
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          cp scripts/setup.ps1 "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/scripts/"
+        else
+          cp scripts/setup.sh "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/scripts/"
+        fi
+        
+        # Copy additional files
+        cp README.md "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/"
+        cp LICENSE "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/"
+        
+        # Create installation instructions for each platform
+        cat > "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/INSTALL.txt" << EOF
+        CrawlX Installation Instructions
+        ================================
+        
+        Platform: ${{ matrix.goos }}-${{ matrix.goarch }}
+        
+        Quick Install:
+        EOF
+        
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          cat >> "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/INSTALL.txt" << EOF
+        1. Extract this ZIP file
+        2. Right-click PowerShell and "Run as Administrator"
+        3. Navigate to extracted folder
+        4. Run: .\scripts\setup.ps1
+        5. Open new terminal and try: crawlx --help
+        
+        Manual Install:
+        - Copy dist\crawlx.exe to a folder in your PATH
+        
+        Uninstall:
+        - Run: .\scripts\setup.ps1 -Uninstall
+        EOF
+        else
+          cat >> "release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/INSTALL.txt" << EOF
+        1. Extract this archive
+        2. Navigate to extracted folder
+        3. Run: sudo ./scripts/setup.sh
+        4. Open new terminal and try: crawlx --help
+        
+        Manual Install:
+        - Copy dist/crawlx to /usr/local/bin/
+        - Run: sudo chmod +x /usr/local/bin/crawlx
+        
+        Uninstall:
+        - Run: sudo ./scripts/setup.sh uninstall
+        EOF
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: crawlx-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: release-temp/${{ matrix.goos }}-${{ matrix.goarch }}/
+        retention-days: 1
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Needed for changelog generation
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+
+    - name: Create release packages
+      run: |
+        mkdir -p release-packages
+        
+        # Create packages for each platform
+        for dir in artifacts/*/; do
+          platform=$(basename "$dir")
+          echo "Creating package for $platform..."
+          
+          cd "$dir"
+          
+          # Determine archive format based on platform
+          if [[ "$platform" == *"windows"* ]]; then
+            # Create ZIP for Windows
+            zip -r "../../release-packages/${platform}.zip" .
+          else
+            # Create tar.gz for Unix-like systems
+            tar -czf "../../release-packages/${platform}.tar.gz" .
+          fi
+          
+          cd - > /dev/null
+        done
+        
+        # List created packages
+        echo "Created packages:"
+        ls -la release-packages/
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the tag name
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          TAG_NAME="${{ github.event.inputs.tag_name }}"
+        else
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+        fi
+        
+        echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+        
+        # Generate changelog since last tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -z "$PREVIOUS_TAG" ]; then
+          echo "## What's New" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "🎉 Initial release of CrawlX!" >> CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "### Features" >> CHANGELOG.md
+          echo "- Fast concurrent web crawling with 10 workers" >> CHANGELOG.md
+          echo "- Professional output with comprehensive error handling" >> CHANGELOG.md
+          echo "- Cross-platform support (Windows, Linux, macOS)" >> CHANGELOG.md
+          echo "- Smart URL validation and respectful crawling" >> CHANGELOG.md
+          echo "- Easy installation scripts for all platforms" >> CHANGELOG.md
+        else
+          echo "## Changes since $PREVIOUS_TAG" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log --pretty=format:"- %s" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+        fi
+        
+        echo "" >> CHANGELOG.md
+        echo "## Installation" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Quick Install" >> CHANGELOG.md
+        echo "1. Download the appropriate package for your platform below" >> CHANGELOG.md
+        echo "2. Extract the archive" >> CHANGELOG.md
+        echo "3. Run the installation script:" >> CHANGELOG.md
+        echo "   - **Linux/macOS**: \`sudo ./scripts/setup.sh\`" >> CHANGELOG.md
+        echo "   - **Windows**: \`.\scripts\setup.ps1\` (as Administrator)" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "### Platform Packages" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "| Platform | Architecture | Package | Size |" >> CHANGELOG.md
+        echo "|----------|-------------|---------|------|" >> CHANGELOG.md
+        
+        for package in release-packages/*; do
+          filename=$(basename "$package")
+          size=$(du -h "$package" | cut -f1)
+          
+          # Extract platform info from filename
+          if [[ "$filename" == *"linux-amd64"* ]]; then
+            platform="🐧 Linux"
+            arch="x86_64"
+          elif [[ "$filename" == *"linux-arm64"* ]]; then
+            platform="🐧 Linux"
+            arch="ARM64"
+          elif [[ "$filename" == *"darwin-amd64"* ]]; then
+            platform="🍎 macOS"
+            arch="Intel"
+          elif [[ "$filename" == *"darwin-arm64"* ]]; then
+            platform="🍎 macOS"
+            arch="Apple Silicon"
+          elif [[ "$filename" == *"windows-amd64"* ]]; then
+            platform="🪟 Windows"
+            arch="x86_64"
+          else
+            platform="❓ Unknown"
+            arch="Unknown"
+          fi
+          
+          echo "| $platform | $arch | \`$filename\` | $size |" >> CHANGELOG.md
+        done
+        
+        echo "" >> CHANGELOG.md
+        echo "## Usage" >> CHANGELOG.md
+        echo "\`\`\`bash" >> CHANGELOG.md
+        echo "# Basic website crawl" >> CHANGELOG.md
+        echo "crawlx -u https://example.com" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "# Deep crawl with verbose output" >> CHANGELOG.md
+        echo "crawlx -u https://example.com -d 3 --verbose" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        echo "# Get help" >> CHANGELOG.md
+        echo "crawlx --help" >> CHANGELOG.md
+        echo "\`\`\`" >> CHANGELOG.md
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.changelog.outputs.tag_name }}
+        name: CrawlX ${{ steps.changelog.outputs.tag_name }}
+        body_path: CHANGELOG.md
+        files: release-packages/*
+        draft: false
+        prerelease: ${{ contains(steps.changelog.outputs.tag_name, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Update latest release info
+      run: |
+        echo "✅ Release ${{ steps.changelog.outputs.tag_name }} created successfully!"
+        echo "📦 Packages created:"
+        ls -la release-packages/
+        echo ""
+        echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.changelog.outputs.tag_name }}"

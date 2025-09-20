@@ -38,17 +38,16 @@ type CrawlError struct {
 
 // Global variables for the final report.
 var (
-	Verbose         bool
-	mu              sync.RWMutex
-	totalCrawled    int
-	totalWarnings   int
-	totalErrors     int
-	redirects       = make(map[string]bool)
-	externalLinks   = make(map[string]bool)
-	successfulPages = make(map[string]time.Duration)
-	allVisitedLinks = make(map[string]bool)
-	failedPages     = make(map[string]CrawlError)
-	malformedLinks  = make(map[string]bool)
+	Verbose            bool
+	mu                 sync.RWMutex
+	totalCrawled       int
+	totalErrors        int
+	successfulPages    = make(map[string]time.Duration)
+	allVisitedLinks    = make(map[string]bool)
+	failedPages        = make(map[string]CrawlError)
+	malformedLinks     = make(map[string]bool)
+	externalLinks      = make(map[string]bool)
+	initialDepthGlobal int
 )
 
 var httpClient = &http.Client{
@@ -61,10 +60,13 @@ const (
 	TaskBufferSize = 100
 	MaxRetries     = 3
 	RetryDelay     = time.Second
+	RequestDelay   = 100 * time.Millisecond
 )
 
 // Crawl is the main setup function with proper concurrency handling.
 func Crawl(startURL *url.URL, initialDepth int) {
+	initialDepthGlobal = initialDepth
+
 	// Create channels with appropriate buffer sizes
 	tasks := make(chan CrawlTask, TaskBufferSize)
 	results := make(chan crawlResult, TaskBufferSize)
@@ -116,6 +118,9 @@ func worker(ctx context.Context, wg *sync.WaitGroup, tasks <-chan CrawlTask, res
 			if !ok {
 				return // Channel closed
 			}
+
+			// Small delay to be polite to servers
+			time.Sleep(RequestDelay)
 
 			// Process the task with retries
 			links, failedLinks, statusCode, duration, err := checkAndResolveURLWithRetry(task.URL.String())
@@ -191,7 +196,7 @@ func dispatcher(ctx context.Context, wg *sync.WaitGroup, tasks chan<- CrawlTask,
 							default:
 								// Channel full, skip this link to prevent blocking
 								if Verbose {
-									fmt.Printf("[WARNING] Task queue full, skipping: %s\n", parsedLink.String())
+									fmt.Printf("    [WARN] Queue full, skipping: %s\n", parsedLink.String())
 								}
 							}
 						}
@@ -211,15 +216,18 @@ func dispatcher(ctx context.Context, wg *sync.WaitGroup, tasks chan<- CrawlTask,
 	}
 }
 
-// processResult updates the global state with proper locking.
+// processResult updates the global state with clean output.
 func processResult(res crawlResult) {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if res.err != nil {
-		failedPages[res.task.URL.String()] = CrawlError{Type: "Network", Message: res.err.Error()}
+		failedPages[res.task.URL.String()] = CrawlError{
+			Type:    "Network Error",
+			Message: fmt.Sprintf("Connection failed: %s", res.err.Error())}
 		totalErrors++
-		fmt.Printf(" [%sFAIL%s] %s (%s)\n", util.ColorRed, util.ColorReset, res.task.URL.String(), res.err.Error())
+		fmt.Printf(" [%sFAIL%s] %s (Network: %s)\n",
+			util.ColorRed, util.ColorReset, res.task.URL.String(), res.err.Error())
 		return
 	}
 
@@ -235,28 +243,67 @@ func processResult(res crawlResult) {
 		statusText = "Unknown Status"
 	}
 
-	// Categorize results
-	if res.statusCode >= 400 {
-		totalErrors++
-		failedPages[res.task.URL.String()] = CrawlError{Type: "HTTP", Message: fmt.Sprintf("Status %d %s", res.statusCode, statusText)}
-	} else if res.statusCode >= 300 {
-		totalWarnings++
-		redirects[res.task.URL.String()] = true
-	} else {
+	// Categorize results by status code ranges
+	switch {
+	case res.statusCode >= 200 && res.statusCode < 300:
+		// 2xx Success
 		totalCrawled++
 		successfulPages[res.task.URL.String()] = res.duration
+	case res.statusCode >= 300 && res.statusCode < 400:
+		// 3xx Redirects - handle silently, don't add to report sections
+		totalCrawled++
+		successfulPages[res.task.URL.String()] = res.duration
+	case res.statusCode >= 400 && res.statusCode < 500:
+		// 4xx Client Errors
+		totalErrors++
+		failedPages[res.task.URL.String()] = CrawlError{
+			Type:    "Client Error",
+			Message: fmt.Sprintf("%d %s", res.statusCode, statusText)}
+	case res.statusCode >= 500 && res.statusCode < 600:
+		// 5xx Server Errors
+		totalErrors++
+		failedPages[res.task.URL.String()] = CrawlError{
+			Type:    "Server Error",
+			Message: fmt.Sprintf("%d %s", res.statusCode, statusText)}
+	default:
+		// Unknown status codes (rare but possible)
+		totalErrors++
+		failedPages[res.task.URL.String()] = CrawlError{
+			Type:    "Unknown Status",
+			Message: fmt.Sprintf("%d %s", res.statusCode, statusText)}
 	}
 
-	// Output formatting
+	// Clean output formatting
 	statusColor := util.GetColor(res.statusCode)
+	currentDepthLevel := initialDepthGlobal - res.task.Depth
+	indent := strings.Repeat("  ", currentDepthLevel)
+
 	if Verbose {
-		fmt.Printf(" [%s%d%s] (Depth %d) %s (%dms)\n",
-			statusColor, res.statusCode, util.ColorReset,
-			res.task.Depth, res.task.URL.String(), res.duration.Milliseconds())
+		// Clean indexed format like the original
+		fmt.Printf("%s[+] Crawling: %s (Depth %d)\n", indent, res.task.URL.String(), currentDepthLevel)
+		fmt.Printf("%s  ↳ [%s%d %s%s] Found %d links (%dms)\n",
+			indent, statusColor, res.statusCode, statusText, util.ColorReset,
+			len(res.links), res.duration.Milliseconds())
+
+		if len(res.links) > 0 && len(res.links) <= 10 {
+			fmt.Printf("%s  Links found:\n", indent)
+			for _, link := range res.links {
+				fmt.Printf("%s    - %s\n", indent, link)
+			}
+		} else if len(res.links) > 10 {
+			fmt.Printf("%s  Links found: (showing first 10 of %d)\n", indent, len(res.links))
+			for i, link := range res.links[:10] {
+				fmt.Printf("%s    - %s\n", indent, link)
+				if i == 9 {
+					fmt.Printf("%s    ... and %d more\n", indent, len(res.links)-10)
+				}
+			}
+		}
 	} else {
-		fmt.Printf(" [%s%d%s] (%dms) %s\n",
+		// Simple clean output
+		fmt.Printf(" [%s%d%s] %s (%dms)\n",
 			statusColor, res.statusCode, util.ColorReset,
-			res.duration.Milliseconds(), res.task.URL.String())
+			res.task.URL.String(), res.duration.Milliseconds())
 	}
 }
 
@@ -275,14 +322,14 @@ func checkAndResolveURLWithRetry(targetURL string) ([]string, []string, int, tim
 
 		lastErr = err
 		if attempt < MaxRetries-1 {
-			time.Sleep(RetryDelay * time.Duration(attempt+1)) // Exponential backoff
+			time.Sleep(RetryDelay * time.Duration(attempt+1))
 		}
 	}
 
 	return nil, nil, 0, totalDuration, fmt.Errorf("failed after %d attempts: %w", MaxRetries, lastErr)
 }
 
-// checkAndResolveURL fetches and parses a URL (unchanged from original).
+// checkAndResolveURL fetches and parses a URL.
 func checkAndResolveURL(targetURL string) ([]string, []string, int, time.Duration, error) {
 	if !strings.HasPrefix(targetURL, "http://") && !strings.HasPrefix(targetURL, "https://") {
 		return nil, nil, 0, 0, fmt.Errorf("unsupported protocol scheme")
@@ -316,98 +363,105 @@ func checkAndResolveURL(targetURL string) ([]string, []string, int, time.Duratio
 	return links, failedLinks, res.StatusCode, duration, nil
 }
 
-// PrintSummaryAndLinks remains the same but with improved thread safety.
+// PrintSummaryAndLinks with clean, separated reporting.
 func PrintSummaryAndLinks(duration time.Duration) {
 	mu.RLock()
 	defer mu.RUnlock()
 
-	fmt.Println("\n" + strings.Repeat("=", 60))
-	fmt.Printf("\n%s CRAWL SITEMAP REPORT\n\n", strings.Repeat(" ", 18))
+	// Clear separation between crawl output and report
+	fmt.Printf("\n")
+	fmt.Println(strings.Repeat("=", 60))
+	fmt.Printf("                    CRAWL REPORT\n")
 	fmt.Println(strings.Repeat("=", 60))
 
-	fmt.Println("\n[+] Crawled Pages (200 OK)")
-	if len(successfulPages) == 0 {
-		fmt.Println("  No pages were crawled successfully.")
-	} else {
-		for url, dur := range successfulPages {
-			fmt.Printf("  - %s (%dms)\n", url, dur.Milliseconds())
+	// Summary stats
+	fmt.Printf("\nScan completed............ Crawled %d sites in %s seconds\n", totalCrawled, duration.Round(time.Millisecond))
+	fmt.Printf("Total: %d | %sSuccess: %d%s | %sErrors: %d%s\n\n",
+		len(allVisitedLinks),
+		util.ColorGreen, totalCrawled, util.ColorReset,
+		util.ColorRed, totalErrors, util.ColorReset)
+
+	// Successful pages (2xx and 3xx - redirects handled transparently)
+	if len(successfulPages) > 0 {
+		fmt.Printf("Successful Pages (%d):\n", len(successfulPages))
+		for pageURL, dur := range successfulPages {
+			fmt.Printf("-  %s (%dms)\n", pageURL, dur.Milliseconds())
+		}
+		fmt.Printf("\n")
+	}
+
+	// All errors grouped by type
+	clientErrors := make(map[string]CrawlError)
+	serverErrors := make(map[string]CrawlError)
+	networkErrors := make(map[string]CrawlError)
+	unknownErrors := make(map[string]CrawlError)
+
+	for pageURL, errInfo := range failedPages {
+		switch errInfo.Type {
+		case "Client Error":
+			clientErrors[pageURL] = errInfo
+		case "Server Error":
+			serverErrors[pageURL] = errInfo
+		case "Network Error":
+			networkErrors[pageURL] = errInfo
+		default:
+			unknownErrors[pageURL] = errInfo
 		}
 	}
 
-	fmt.Println("\n" + strings.Repeat("-", 60) + "\n")
-	fmt.Println("[~] Redirects (3xx)")
-	if len(redirects) == 0 {
-		fmt.Println("  No redirects found.")
-	} else {
-		for url := range redirects {
-			fmt.Printf("  - %s\n", url)
+	// Client errors (4xx)
+	if len(clientErrors) > 0 {
+		fmt.Printf("Client Errors - 4xx (%d):\n", len(clientErrors))
+		for pageURL, errInfo := range clientErrors {
+			fmt.Printf("-  %s (%s)\n", pageURL, errInfo.Message)
 		}
+		fmt.Printf("\n")
 	}
 
-	httpErrors := false
-	networkErrors := false
-
-	fmt.Println("\n" + strings.Repeat("-", 60) + "\n")
-	fmt.Println("[✗] Client & Server Errors (4xx/5xx)")
-	for url, errInfo := range failedPages {
-		if errInfo.Type == "HTTP" {
-			fmt.Printf("  - %s (%s)\n", url, errInfo.Message)
-			httpErrors = true
+	// Server errors (5xx)
+	if len(serverErrors) > 0 {
+		fmt.Printf("Server Errors - 5xx (%d):\n", len(serverErrors))
+		for pageURL, errInfo := range serverErrors {
+			fmt.Printf("-  %s (%s)\n", pageURL, errInfo.Message)
 		}
-	}
-	if !httpErrors {
-		fmt.Println("  No server-side errors encountered.")
+		fmt.Printf("\n")
 	}
 
-	fmt.Println("\n" + strings.Repeat("-", 60) + "\n")
-	fmt.Println("[!] Network & Parsing Failures")
-	for url, errInfo := range failedPages {
-		if errInfo.Type == "Network" {
-			fmt.Printf("  - %s (%s)\n", url, errInfo.Message)
-			networkErrors = true
+	// Network errors
+	if len(networkErrors) > 0 {
+		fmt.Printf("Network Errors (%d):\n", len(networkErrors))
+		for pageURL, errInfo := range networkErrors {
+			fmt.Printf("-  %s (%s)\n", pageURL, errInfo.Message)
 		}
-	}
-	if !networkErrors {
-		fmt.Println("  No network or parsing failures encountered.")
+		fmt.Printf("\n")
 	}
 
-	fmt.Println("\n" + strings.Repeat("-", 60) + "\n")
-	fmt.Println("[?] Malformed Links Found (Skipped)")
-	if len(malformedLinks) == 0 {
-		fmt.Println("  No malformed links were found.")
-	} else {
-		for link := range malformedLinks {
-			fmt.Printf("  - %s\n", link)
+	// Unknown status codes (rare)
+	if len(unknownErrors) > 0 {
+		fmt.Printf("Unknown Status Codes (%d):\n", len(unknownErrors))
+		for pageURL, errInfo := range unknownErrors {
+			fmt.Printf("-  %s (%s)\n", pageURL, errInfo.Message)
 		}
+		fmt.Printf("\n")
 	}
 
-	fmt.Println("\n" + strings.Repeat("-", 60) + "\n")
-	fmt.Println("[!] External Links Found")
-	if len(externalLinks) == 0 {
-		fmt.Println("  No external links found.")
-	} else {
+	// External links
+	if len(externalLinks) > 0 {
+		fmt.Printf("External Links (%d):\n", len(externalLinks))
 		for link := range externalLinks {
-			fmt.Printf("  - %s\n", link)
+			fmt.Printf("-  %s\n", link)
 		}
+		fmt.Printf("\n")
 	}
 
-	fmt.Println("\n" + strings.Repeat("=", 60) + "\n")
-	fmt.Println("Crawl Summary")
-	fmt.Printf("  - Crawled %d pages in %s.\n", totalCrawled, duration.Round(time.Millisecond))
-	fmt.Printf("  - %sSuccess:%s %d\n", util.ColorGreen, util.ColorReset, totalCrawled)
-	fmt.Printf("  - %sWarnings:%s %d\n", util.ColorYellow, util.ColorReset, totalWarnings)
-	fmt.Printf("  - %sErrors:%s %d\n", util.ColorRed, util.ColorReset, totalErrors)
-
-	fmt.Println("\n" + strings.Repeat("=", 60) + "\n")
-	fmt.Println("All Links Found")
-	for url := range allVisitedLinks {
-		if _, ok := successfulPages[url]; ok {
-			fmt.Printf("  - [%s✓%s] %s\n", util.ColorGreen, util.ColorReset, url)
-		} else if _, ok := redirects[url]; ok {
-			fmt.Printf("  - [%s~%s] %s\n", util.ColorYellow, util.ColorReset, url)
-		} else {
-			fmt.Printf("  - [%s✗%s] %s\n", util.ColorRed, util.ColorReset, url)
+	// Malformed links
+	if len(malformedLinks) > 0 {
+		fmt.Printf("Malformed Links (%d):\n", len(malformedLinks))
+		for link := range malformedLinks {
+			fmt.Printf("-  %s\n", link)
 		}
+		fmt.Printf("\n")
 	}
-	fmt.Println("\n" + strings.Repeat("=", 60))
+
+	fmt.Println(strings.Repeat("=", 60))
 }
