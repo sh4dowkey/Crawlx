@@ -1,7 +1,7 @@
 name: Build Release Packages
 
 on:
-  workflow_dispatch:  # Manual trigger from GitHub Actions tab
+  workflow_dispatch:
     inputs:
       version:
         description: 'Version tag (e.g., v1.0.0)'
@@ -43,8 +43,7 @@ jobs:
         CGO_ENABLED: 0
       run: |
         echo "Building Windows binary..."
-        go build -ldflags="-w -s -X main.Version=${{ github.event.inputs.version }}" \
-          -o dist/crawlx.exe ./cmd/crawlx
+        go build -ldflags="-w -s" -o dist/crawlx.exe ./cmd/crawlx
 
     - name: Build Linux binary
       env:
@@ -53,142 +52,96 @@ jobs:
         CGO_ENABLED: 0
       run: |
         echo "Building Linux binary..."
-        go build -ldflags="-w -s -X main.Version=${{ github.event.inputs.version }}" \
-          -o dist/crawlx ./cmd/crawlx
+        go build -ldflags="-w -s" -o dist/crawlx ./cmd/crawlx
 
-    - name: Create Windows package folder
+    - name: Create Windows package
       run: |
         echo "Creating Windows package..."
         mkdir -p packages/crawlx-windows/dist
         mkdir -p packages/crawlx-windows/scripts
         
-        # Copy Windows binary
         cp dist/crawlx.exe packages/crawlx-windows/dist/
-        
-        # Copy Windows script
         cp scripts/setup.ps1 packages/crawlx-windows/scripts/
         
-        # Create Windows README
         cat > packages/crawlx-windows/README.txt << 'EOF'
         CrawlX Windows Installation
         ===========================
         
         Quick Install:
         1. Right-click PowerShell and select "Run as Administrator"
-        2. Navigate to this folder in PowerShell
+        2. Navigate to this folder
         3. Run: .\scripts\setup.ps1
-        4. Open new terminal and try: crawlx --help
+        4. Try: crawlx --help
         
         Manual Install:
-        1. Copy dist\crawlx.exe to a folder in your PATH
-        2. Or add this folder to your system PATH
+        Copy dist\crawlx.exe to a folder in your PATH
         
         Uninstall:
-        Run: .\scripts\setup.ps1 -Uninstall
-        
-        Support: https://github.com/sh4dowkey/crawlx
+        .\scripts\setup.ps1 -Uninstall
         EOF
 
-    - name: Create Linux package folder
+    - name: Create Linux package
       run: |
         echo "Creating Linux package..."
         mkdir -p packages/crawlx-linux/dist
         mkdir -p packages/crawlx-linux/scripts
         
-        # Copy Linux binary
         cp dist/crawlx packages/crawlx-linux/dist/
-        
-        # Copy Linux script
         cp scripts/setup.sh packages/crawlx-linux/scripts/
-        
-        # Make script executable
         chmod +x packages/crawlx-linux/scripts/setup.sh
         
-        # Create Linux README
         cat > packages/crawlx-linux/README.txt << 'EOF'
         CrawlX Linux Installation
         =========================
         
         Quick Install:
-        1. Make script executable: chmod +x ./scripts/setup.sh
-        2. Run installer: sudo ./scripts/setup.sh
-        3. Open new terminal and try: crawlx --help
+        1. Make executable: chmod +x ./scripts/setup.sh
+        2. Run: sudo ./scripts/setup.sh
+        3. Try: crawlx --help
         
         Manual Install:
-        1. Copy dist/crawlx to /usr/local/bin/
-        2. Run: sudo chmod +x /usr/local/bin/crawlx
+        sudo cp dist/crawlx /usr/local/bin/
+        sudo chmod +x /usr/local/bin/crawlx
         
         Uninstall:
-        Run: sudo ./scripts/setup.sh uninstall
-        
-        Support: https://github.com/sh4dowkey/crawlx
+        sudo ./scripts/setup.sh uninstall
         EOF
 
-    - name: Create Windows ZIP package
+    - name: Create packages
       run: |
-        echo "Creating Windows ZIP..."
         cd packages
         zip -r crawlx-windows-${{ github.event.inputs.version }}.zip crawlx-windows/
-        echo "Windows package created: crawlx-windows-${{ github.event.inputs.version }}.zip"
-
-    - name: Create Linux TAR package
-      run: |
-        echo "Creating Linux TAR..."
-        cd packages
         tar -czf crawlx-linux-${{ github.event.inputs.version }}.tar.gz crawlx-linux/
-        echo "Linux package created: crawlx-linux-${{ github.event.inputs.version }}.tar.gz"
-
-    - name: List created packages
-      run: |
+        
         echo "Packages created:"
-        ls -la packages/*.zip packages/*.tar.gz
-        echo ""
-        echo "Package contents:"
-        echo "=================="
-        echo "Windows package:"
-        unzip -l packages/crawlx-windows-${{ github.event.inputs.version }}.zip
-        echo ""
-        echo "Linux package:"
-        tar -tzf packages/crawlx-linux-${{ github.event.inputs.version }}.tar.gz
+        ls -la *.zip *.tar.gz
 
     - name: Upload Windows package
       uses: actions/upload-artifact@v3
       with:
         name: crawlx-windows-${{ github.event.inputs.version }}
         path: packages/crawlx-windows-${{ github.event.inputs.version }}.zip
-        retention-days: 30
 
-    - name: Upload Linux package  
+    - name: Upload Linux package
       uses: actions/upload-artifact@v3
       with:
         name: crawlx-linux-${{ github.event.inputs.version }}
         path: packages/crawlx-linux-${{ github.event.inputs.version }}.tar.gz
-        retention-days: 30
 
-    - name: Show download instructions
+    - name: Show instructions
       run: |
-        echo "=========================="
-        echo "BUILD COMPLETED SUCCESSFULLY!"
-        echo "=========================="
+        echo "✅ BUILD COMPLETED!"
         echo ""
-        echo "Packages created:"
-        echo "• crawlx-windows-${{ github.event.inputs.version }}.zip"
-        echo "• crawlx-linux-${{ github.event.inputs.version }}.tar.gz"
+        echo "📦 Packages created:"
+        echo "  • crawlx-windows-${{ github.event.inputs.version }}.zip"  
+        echo "  • crawlx-linux-${{ github.event.inputs.version }}.tar.gz"
         echo ""
-        echo "TO DOWNLOAD:"
-        echo "1. Go to the 'Actions' tab in GitHub"
-        echo "2. Click on this workflow run"
-        echo "3. Scroll down to 'Artifacts' section"
-        echo "4. Download both packages"
+        echo "📥 TO DOWNLOAD:"
+        echo "  1. Go to Actions tab"
+        echo "  2. Click this workflow run"  
+        echo "  3. Download from Artifacts section"
         echo ""
-        echo "TO RELEASE:"
-        echo "1. Go to GitHub Releases"
-        echo "2. Create new release with tag: ${{ github.event.inputs.version }}"
-        echo "3. Upload both downloaded packages"
-        echo "4. Publish release"
-        echo ""
-        echo "Each package contains:"
-        echo "├── dist/ (binary file)"
-        echo "├── scripts/ (installation script)"  
-        echo "└── README.txt (installation instructions)"
-        echo "=========================="
+        echo "🚀 TO RELEASE:"
+        echo "  1. Create GitHub Release"
+        echo "  2. Upload both packages" 
+        echo "  3. Publish!"
