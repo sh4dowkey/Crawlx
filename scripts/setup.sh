@@ -1,133 +1,208 @@
 #!/bin/bash
 
-# --- Configuration ---
+# Configuration
 BINARY_NAME="crawlx"
 INSTALL_DIR="/usr/local/bin"
 DEST_PATH="$INSTALL_DIR/$BINARY_NAME"
 
-# --- ANSI Color Codes ---
-COLOR_CYAN='\033[0;36m'
-COLOR_GREEN='\033[0;32m'
-COLOR_RED='\033[0;31m'
-COLOR_YELLOW='\033[0;33m'
-COLOR_RESET='\033[0m'
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+GRAY='\033[0;37m'
+RESET='\033[0m'
 
-# --- Banners ---
-get_banner() {
-    # (Your awesome ASCII art banner remains the same)
-    cat << EOF
-${COLOR_CYAN}
-======================================
-                                                                    
- @@@@@@@  @@@@@@@    @@@@@@   @@@  @@@  @@@  @@@          @@@  @@@  
-@@@@@@@@  @@@@@@@@  @@@@@@@@  @@@  @@@  @@@  @@@          @@@  @@@  
-!@@       @@!  @@@  @@!  @@@  @@!  @@!  @@!  @@!          @@!  !@@  
-!@!       !@!  @!@  !@!  @!@  !@!  !@!  !@!  !@!          !@!  @!!  
-!@!       @!@!!@!   @!@!@!@!  @!!  !!@  @!@  @!!           !@@!@!   
-!!!       !!@!@!    !!!@!!!!  !@!  !!!  !@!  !!!            @!!!    
-:!!       !!: :!!   !!:  !!!  !!:  !!:  !!:  !!:           !: :!!   
-:!:       :!:  !:!  :!:  !:!  :!:  :!:  :!:   :!:         :!:  !:!  
- ::: :::  ::   :::  ::   :::   :::: :: :::    :: ::::      ::  :::  
- :: :: :   :   : :   :   : :    :: :  : :    : :: : :      :   ::   
- 
-======================================
-${COLOR_RESET}
-EOF
+# Logging functions
+log_info()    { echo -e "${BLUE}[INFO]${RESET} $1"; }
+log_success() { echo -e "${GREEN}[OK]${RESET} $1"; }
+log_warning() { echo -e "${YELLOW}[WARN]${RESET} $1"; }
+log_error()   { echo -e "${RED}[ERROR]${RESET} $1"; }
+log_step()    { echo -e "${CYAN}•${RESET} $1"; }
+
+show_header() {
+    echo ""
+    echo "CrawlX Installation Script"
+    echo -e "${GRAY}==========================${RESET}"
+    echo ""
 }
 
-# --- Helper Functions ---
-detect_binary() {
+check_requirements() {
+    log_step "Checking system requirements"
+    
+    # Check if running as root for sudo verification
+    if [[ $EUID -eq 0 ]]; then
+        log_warning "Running as root (not recommended)"
+    fi
+    
+    # Check sudo availability
+    if ! command -v sudo &> /dev/null; then
+        log_error "sudo is required but not installed"
+        exit 1
+    fi
+    
+    # Test sudo access
+    if ! sudo -n true 2>/dev/null; then
+        log_info "Testing sudo privileges (password may be required)"
+        if ! sudo -v; then
+            log_error "sudo privileges required"
+            exit 1
+        fi
+    fi
+    
+    log_success "System requirements met"
+}
+
+find_binary() {
+    log_step "Locating binary file"
+    
+    # Detect system
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
     ARCH=$(uname -m)
     case $ARCH in
         x86_64) ARCH="amd64" ;;
-        aarch64) ARCH="arm64" ;;
-        arm64) ARCH="arm64" ;;
+        aarch64|arm64) ARCH="arm64" ;;
     esac
-
-    # Construct the expected binary name (e.g., crawlx-linux-amd64)
-    # This matches the output of our cross-compilation commands.
-    local detected_binary_name="${BINARY_NAME}-${OS}-${ARCH}"
-    if [ -f "./dist/$detected_binary_name" ]; then
-        SOURCE_PATH="./dist/$detected_binary_name"
-    elif [ -f "./dist/$BINARY_NAME" ]; then
-        # Fallback for a generic binary name
-        SOURCE_PATH="./dist/$BINARY_NAME"
-    else
-        echo ""
-        return 1
-    fi
-    return 0
+    
+    # Look for binary
+    candidates=(
+        "./dist/${BINARY_NAME}-${OS}-${ARCH}"
+        "./dist/${BINARY_NAME}"
+    )
+    
+    for candidate in "${candidates[@]}"; do
+        if [[ -f "$candidate" ]]; then
+            SOURCE_PATH="$candidate"
+            size=$(du -h "$candidate" | cut -f1)
+            log_success "Found binary: $(basename "$candidate") (${size})"
+            return 0
+        fi
+    done
+    
+    log_error "Binary not found in ./dist/"
+    echo ""
+    echo -e "${GRAY}Expected folder structure:${RESET}"
+    echo -e "${GRAY}  ├── dist/${RESET}"
+    echo -e "${GRAY}  │   └── crawlx${RESET}"
+    echo -e "${GRAY}  └── scripts/${RESET}"
+    echo -e "${GRAY}      └── setup.sh${RESET}"
+    exit 1
 }
 
-# --- Main Logic ---
-main() {
-    echo -e "$(get_banner)"
-    echo -e "${COLOR_CYAN}         CRAWLX CLI INSTALLER${COLOR_RESET}"
-    echo ""
-
-    # --- Step 1: Check for binary ---
-    echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 1 of 4: Detecting binary..."
-    if ! detect_binary; then
-        echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Could not find a suitable binary in './dist/'."
-        echo "       The installation cannot proceed."
-        # (Your helpful build guide remains the same)
-        exit 1
-    fi
-    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Binary found at '$SOURCE_PATH'."
-    echo ""
-
-    # --- Step 2: Copy binary ---
-    echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 2 of 4: Copying file to system directory..."
-    sudo cp "$SOURCE_PATH" "$DEST_PATH"
-    if [ $? -ne 0 ]; then
-        echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Installation failed. Check permissions or try running with 'sudo'."
-        exit 1
-    fi
-    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} File copied successfully."
-    echo ""
-
-    # --- Step 3: Grant executable permissions ---
-    echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 3 of 4: Granting executable permissions..."
-    sudo chmod +x "$DEST_PATH"
-    if [ $? -ne 0 ]; then
-        echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Failed to set permissions. Try running with 'sudo'."
-        exit 1
-    fi
-    echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Permissions set successfully."
-    echo ""
-
-    # --- Step 4: Verify installation ---
-    echo -e " ${COLOR_CYAN}>>${COLOR_RESET} Step 4 of 4: Verifying final installation..."
+check_existing() {
+    log_step "Checking for existing installations"
+    
     if command -v "$BINARY_NAME" &> /dev/null; then
-        echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Installation complete! '$BINARY_NAME' is ready."
-        echo ""
-        echo "You can now run '$BINARY_NAME' from any folder."
-        echo -e "To uninstall, run: ${COLOR_YELLOW}bash setup.sh uninstall${COLOR_RESET}"
+        existing_path=$(command -v "$BINARY_NAME")
+        log_success "Found existing installation: $existing_path"
     else
-        echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Verification failed. Please check your system's PATH."
+        log_success "No existing installation found"
+    fi
+}
+
+install_binary() {
+    log_step "Installing to system directory"
+    
+    if ! sudo cp "$SOURCE_PATH" "$DEST_PATH"; then
+        log_error "Failed to copy binary"
+        exit 1
+    fi
+    
+    if ! sudo chmod +x "$DEST_PATH"; then
+        log_error "Failed to set permissions"
+        exit 1
+    fi
+    
+    log_success "Binary installed to $INSTALL_DIR"
+}
+
+verify_installation() {
+    log_step "Verifying installation"
+    
+    if command -v "$BINARY_NAME" &> /dev/null; then
+        log_success "Installation completed successfully"
+        echo ""
+        echo "Installation Details:"
+        echo -e "${GRAY}  Location: $DEST_PATH${RESET}"
+        echo -e "${GRAY}  Permissions: $(ls -l "$DEST_PATH" | cut -d' ' -f1)${RESET}"
+    else
+        log_error "Installation verification failed"
         exit 1
     fi
 }
 
-uninstall() {
-    echo -e "${COLOR_YELLOW}Starting uninstallation process...${COLOR_RESET}"
-    if [ -f "$DEST_PATH" ]; then
-        echo "Removing '$DEST_PATH'..."
-        sudo rm "$DEST_PATH"
-        if [ $? -eq 0 ]; then
-            echo -e "${COLOR_GREEN}[OK]${COLOR_RESET} Uninstallation successful."
+show_next_steps() {
+    echo ""
+    echo "Next Steps:"
+    echo -e "${GRAY}1. Open a new terminal window${RESET}"
+    echo -e "${GRAY}2. Test: crawlx -u https://example.com -d 1${RESET}"
+    echo -e "${GRAY}3. Get help: crawlx --help${RESET}"
+    echo ""
+    echo -e "${YELLOW}To uninstall: sudo ./scripts/setup.sh uninstall${RESET}"
+}
+
+install_crawlx() {
+    show_header
+    
+    check_requirements
+    find_binary
+    check_existing
+    install_binary
+    verify_installation
+    show_next_steps
+}
+
+uninstall_crawlx() {
+    echo ""
+    echo "CrawlX Uninstall"
+    echo -e "${GRAY}================${RESET}"
+    echo ""
+    
+    log_step "Removing installation"
+    
+    if [[ -f "$DEST_PATH" ]]; then
+        if sudo rm "$DEST_PATH"; then
+            log_success "Binary removed from $INSTALL_DIR"
         else
-            echo -e "${COLOR_RED}[FAIL]${COLOR_RESET} Could not remove the file. Please check permissions."
+            log_error "Failed to remove binary"
+            exit 1
         fi
     else
-        echo -e "${COLOR_YELLOW}[INFO]${COLOR_RESET} '$BINARY_NAME' is not installed in '$INSTALL_DIR'."
+        log_warning "Binary not found at $DEST_PATH"
     fi
+    
+    log_success "Uninstallation completed"
+    echo ""
+    echo -e "${YELLOW}Terminal restart recommended${RESET}"
 }
 
-# --- Script Entry Point ---
-if [ "$1" == "uninstall" ]; then
-    uninstall
-else
-    main
-fi
+show_help() {
+    echo ""
+    echo "CrawlX Setup Script"
+    echo -e "${GRAY}===================${RESET}"
+    echo ""
+    echo -e "${YELLOW}USAGE:${RESET}"
+    echo "  sudo ./setup.sh           Install CrawlX"
+    echo "  sudo ./setup.sh uninstall Remove CrawlX"
+    echo "  ./setup.sh help           Show this help"
+    echo ""
+    echo -e "${YELLOW}REQUIREMENTS:${RESET}"
+    echo "  • sudo privileges"
+    echo "  • Linux or macOS"
+    echo "  • /usr/local/bin writable"
+    echo ""
+}
+
+# Main execution
+case "${1:-install}" in
+    "uninstall")
+        uninstall_crawlx
+        ;;
+    "help"|"--help"|"-h")
+        show_help
+        ;;
+    *)
+        install_crawlx
+        ;;
+esac
