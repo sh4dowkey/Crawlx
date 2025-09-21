@@ -57,13 +57,13 @@ jobs:
     - name: Create Windows package
       run: |
         echo "Creating Windows package..."
-        mkdir -p packages/crawlx-windows/dist
-        mkdir -p packages/crawlx-windows/scripts
+        mkdir -p windows-package/dist
+        mkdir -p windows-package/scripts
         
-        cp dist/crawlx.exe packages/crawlx-windows/dist/
-        cp scripts/setup.ps1 packages/crawlx-windows/scripts/
+        cp dist/crawlx.exe windows-package/dist/
+        cp scripts/setup.ps1 windows-package/scripts/
         
-        cat > packages/crawlx-windows/README.txt << 'EOF'
+        cat > windows-package/README.txt << 'EOF'
         CrawlX Windows Installation
         ===========================
         
@@ -83,14 +83,14 @@ jobs:
     - name: Create Linux package
       run: |
         echo "Creating Linux package..."
-        mkdir -p packages/crawlx-linux/dist
-        mkdir -p packages/crawlx-linux/scripts
+        mkdir -p linux-package/dist
+        mkdir -p linux-package/scripts
         
-        cp dist/crawlx packages/crawlx-linux/dist/
-        cp scripts/setup.sh packages/crawlx-linux/scripts/
-        chmod +x packages/crawlx-linux/scripts/setup.sh
+        cp dist/crawlx linux-package/dist/
+        cp scripts/setup.sh linux-package/scripts/
+        chmod +x linux-package/scripts/setup.sh
         
-        cat > packages/crawlx-linux/README.txt << 'EOF'
+        cat > linux-package/README.txt << 'EOF'
         CrawlX Linux Installation
         =========================
         
@@ -109,9 +109,15 @@ jobs:
 
     - name: Create packages
       run: |
-        cd packages
-        zip -r crawlx-windows-${{ github.event.inputs.version }}.zip crawlx-windows/
-        tar -czf crawlx-linux-${{ github.event.inputs.version }}.tar.gz crawlx-linux/
+        # Create Windows ZIP - zip the contents, not the folder
+        cd windows-package
+        zip -r ../crawlx-windows-${{ github.event.inputs.version }}.zip *
+        cd ..
+        
+        # Create Linux TAR - same approach  
+        cd linux-package
+        tar -czf ../crawlx-linux-${{ github.event.inputs.version }}.tar.gz *
+        cd ..
         
         echo "Packages created:"
         ls -la *.zip *.tar.gz
@@ -120,13 +126,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: crawlx-windows-${{ github.event.inputs.version }}
-        path: packages/crawlx-windows-${{ github.event.inputs.version }}.zip
+        path: crawlx-windows-${{ github.event.inputs.version }}.zip
 
     - name: Upload Linux package
       uses: actions/upload-artifact@v4
       with:
         name: crawlx-linux-${{ github.event.inputs.version }}
-        path: packages/crawlx-linux-${{ github.event.inputs.version }}.tar.gz
+        path: crawlx-linux-${{ github.event.inputs.version }}.tar.gz
 
     - name: Show instructions
       run: |
