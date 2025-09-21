@@ -5,7 +5,18 @@ BINARY_NAME=crawlx
 CMD_PATH=./cmd/crawlx
 DIST_PATH=./dist
 
-# Default command to run when you just type "make"
+# Detect OS (Windows_NT is set by Windows)
+ifeq ($(OS),Windows_NT)
+    MKDIR=if not exist $(DIST_PATH) mkdir $(DIST_PATH)
+    RM=rmdir /s /q $(DIST_PATH)
+    BINEXT=.exe
+else
+    MKDIR=mkdir -p $(DIST_PATH)
+    RM=rm -rf $(DIST_PATH)
+    BINEXT=
+endif
+
+# Default target
 .PHONY: help
 help:
 	@echo "Usage: make <target>"
@@ -24,24 +35,24 @@ run:
 # Build for the current OS
 .PHONY: build
 build:
-	@echo "Building for current OS..."
-	@mkdir -p $(DIST_PATH)
-	@go build -o $(DIST_PATH)/$(BINARY_NAME) $(CMD_PATH)
-	@echo "Build complete!"
+	@echo Building for current OS...
+	@$(MKDIR)
+	go build -o $(DIST_PATH)/$(BINARY_NAME)$(BINEXT) $(CMD_PATH)
+	@echo Build complete!
 
 # Build for all target platforms
 .PHONY: build-all
 build-all:
-	@echo "Building for all platforms..."
-	@mkdir -p $(DIST_PATH)
-	@GOOS=linux GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-linux-amd64 $(CMD_PATH)
-	@GOOS=windows GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-windows-amd64.exe $(CMD_PATH)
-	@GOOS=darwin GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-darwin-amd64 $(CMD_PATH)
-	@echo "All builds complete!"
+	@echo Building for all platforms...
+	@$(MKDIR)
+	GOOS=linux GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-linux-amd64 $(CMD_PATH)
+	GOOS=windows GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-windows-amd64.exe $(CMD_PATH)
+	GOOS=darwin GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-darwin-amd64 $(CMD_PATH)
+	@echo All builds complete!
 
 # Clean the dist directory
 .PHONY: clean
 clean:
-	@echo "Cleaning build artifacts..."
-	@rm -rf $(DIST_PATH)
-	@echo "Clean complete."
+	@echo Cleaning build artifacts...
+	@$(RM)
+	@echo Clean complete.
