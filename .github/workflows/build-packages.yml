@@ -107,38 +107,23 @@ jobs:
         sudo ./scripts/setup.sh uninstall
         EOF
 
-    - name: Create packages
-      run: |
-        # Create Windows ZIP - zip the contents, not the folder
-        cd windows-package
-        zip -r ../crawlx-windows-${{ github.event.inputs.version }}.zip *
-        cd ..
-        
-        # Create Linux TAR - same approach  
-        cd linux-package
-        tar -czf ../crawlx-linux-${{ github.event.inputs.version }}.tar.gz *
-        cd ..
-        
-        echo "Packages created:"
-        ls -la *.zip *.tar.gz
-
     - name: Upload Windows package
       uses: actions/upload-artifact@v4
       with:
         name: crawlx-windows-${{ github.event.inputs.version }}
-        path: crawlx-windows-${{ github.event.inputs.version }}.zip
+        path: windows-package/
 
     - name: Upload Linux package
       uses: actions/upload-artifact@v4
       with:
         name: crawlx-linux-${{ github.event.inputs.version }}
-        path: crawlx-linux-${{ github.event.inputs.version }}.tar.gz
+        path: linux-package/
 
     - name: Show instructions
       run: |
         echo "✅ BUILD COMPLETED!"
         echo ""
-        echo "📦 Packages created:"
+        echo "📦 Packages ready for download:"
         echo "  • crawlx-windows-${{ github.event.inputs.version }}.zip"  
         echo "  • crawlx-linux-${{ github.event.inputs.version }}.tar.gz"
         echo ""
@@ -146,8 +131,14 @@ jobs:
         echo "  1. Go to Actions tab"
         echo "  2. Click this workflow run"  
         echo "  3. Download from Artifacts section"
+        echo "  4. Each download will be a single ZIP/TAR file"
         echo ""
         echo "🚀 TO RELEASE:"
         echo "  1. Create GitHub Release"
         echo "  2. Upload both packages" 
         echo "  3. Publish!"
+        echo ""
+        echo "📁 Package contents:"
+        echo "  ├── dist/ (binary)"
+        echo "  ├── scripts/ (installer)"  
+        echo "  └── README.txt (instructions)"
