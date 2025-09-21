@@ -36,6 +36,7 @@ jobs:
     - name: Create dist directory
       run: mkdir -p dist
 
+    # Windows Build
     - name: Build Windows binary
       env:
         GOOS: windows
@@ -45,6 +46,7 @@ jobs:
         echo "Building Windows binary..."
         go build -ldflags="-w -s" -o dist/crawlx.exe ./cmd/crawlx
 
+    # Linux Build
     - name: Build Linux binary
       env:
         GOOS: linux
@@ -54,6 +56,17 @@ jobs:
         echo "Building Linux binary..."
         go build -ldflags="-w -s" -o dist/crawlx ./cmd/crawlx
 
+    # macOS Build
+    - name: Build macOS binary
+      env:
+        GOOS: darwin
+        GOARCH: amd64
+        CGO_ENABLED: 0
+      run: |
+        echo "Building macOS binary..."
+        go build -ldflags="-w -s" -o dist/crawlx ./cmd/crawlx
+
+    # ----------------- PACKAGE WINDOWS -----------------
     - name: Create Windows package
       run: |
         echo "Creating Windows package..."
@@ -80,6 +93,7 @@ jobs:
         .\scripts\setup.ps1 -Uninstall
         EOF
 
+    # ----------------- PACKAGE LINUX -----------------
     - name: Create Linux package
       run: |
         echo "Creating Linux package..."
@@ -107,6 +121,39 @@ jobs:
         sudo ./scripts/setup.sh uninstall
         EOF
 
+    - name: Compress Linux package to tar.gz
+      run: |
+        tar -czvf crawlx-linux-${{ github.event.inputs.version }}.tar.gz -C linux-package .
+
+    # ----------------- PACKAGE MACOS -----------------
+    - name: Create macOS package
+      run: |
+        echo "Creating macOS package..."
+        mkdir -p mac-package/dist
+        mkdir -p mac-package/scripts
+        
+        cp dist/crawlx mac-package/dist/
+        cp scripts/setup.sh mac-package/scripts/
+        chmod +x mac-package/scripts/setup.sh
+        
+        cat > mac-package/README.txt << 'EOF'
+        CrawlX macOS Installation
+        =========================
+        
+        Quick Install:
+        1. Make executable: chmod +x ./scripts/setup.sh
+        2. Run: sudo ./scripts/setup.sh
+        3. Try: crawlx --help
+        
+        Manual Install:
+        sudo cp dist/crawlx /usr/local/bin/
+        sudo chmod +x /usr/local/bin/crawlx
+        
+        Uninstall:
+        sudo ./scripts/setup.sh uninstall
+        EOF
+
+    # ----------------- UPLOAD ARTIFACTS -----------------
     - name: Upload Windows package
       uses: actions/upload-artifact@v4
       with:
@@ -117,8 +164,15 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: crawlx-linux-${{ github.event.inputs.version }}
-        path: linux-package/
+        path: crawlx-linux-${{ github.event.inputs.version }}.tar.gz
 
+    - name: Upload macOS package
+      uses: actions/upload-artifact@v4
+      with:
+        name: crawlx-macos-${{ github.event.inputs.version }}
+        path: mac-package/
+
+    # ----------------- SHOW INSTRUCTIONS -----------------
     - name: Show instructions
       run: |
         echo "✅ BUILD COMPLETED!"
@@ -126,16 +180,16 @@ jobs:
         echo "📦 Packages ready for download:"
         echo "  • crawlx-windows-${{ github.event.inputs.version }}.zip"  
         echo "  • crawlx-linux-${{ github.event.inputs.version }}.tar.gz"
+        echo "  • crawlx-macos-${{ github.event.inputs.version }}.zip"
         echo ""
         echo "📥 TO DOWNLOAD:"
         echo "  1. Go to Actions tab"
         echo "  2. Click this workflow run"  
         echo "  3. Download from Artifacts section"
-        echo "  4. Each download will be a single ZIP/TAR file"
         echo ""
         echo "🚀 TO RELEASE:"
         echo "  1. Create GitHub Release"
-        echo "  2. Upload both packages" 
+        echo "  2. Upload all 3 packages" 
         echo "  3. Publish!"
         echo ""
         echo "📁 Package contents:"

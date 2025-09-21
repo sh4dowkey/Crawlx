@@ -18,7 +18,7 @@ function Write-Info    { param([string]$Msg) Write-Host "[INFO] $Msg" -Foregroun
 function Write-Success { param([string]$Msg) Write-Host "[OK] $Msg" -ForegroundColor Green }
 function Write-Warning { param([string]$Msg) Write-Host "[WARN] $Msg" -ForegroundColor Yellow }
 function Write-Error   { param([string]$Msg) Write-Host "[ERROR] $Msg" -ForegroundColor Red }
-function Write-Step    { param([string]$Msg) Write-Host "• $Msg" -ForegroundColor Cyan }
+function Write-Step    { param([string]$Msg) Write-Host "- $Msg" -ForegroundColor Cyan }
 
 function Show-Header {
     Write-Host ""
@@ -149,9 +149,9 @@ function Install-CrawlX {
         Write-Error "Installation failed: $($_.Exception.Message)"
         Write-Host ""
         Write-Host "Troubleshooting:" -ForegroundColor Yellow
-        Write-Host "• Ensure you're running as Administrator" -ForegroundColor Gray
-        Write-Host "• Check that crawlx.exe exists in .\dist\" -ForegroundColor Gray
-        Write-Host "• Try restarting PowerShell" -ForegroundColor Gray
+        Write-Host "- Ensure you're running as Administrator" -ForegroundColor Gray
+        Write-Host "- Check that crawlx.exe exists in .\dist\" -ForegroundColor Gray
+        Write-Host "- Try restarting PowerShell" -ForegroundColor Gray
         exit 1
     }
 }
@@ -206,9 +206,9 @@ function Show-Help {
     Write-Host "  .\setup.ps1 -Help         Show this help"
     Write-Host ""
     Write-Host "REQUIREMENTS:" -ForegroundColor Yellow
-    Write-Host "  • Administrator privileges"
-    Write-Host "  • PowerShell 5.0+"
-    Write-Host "  • Windows 10+ (recommended)"
+    Write-Host "  - Administrator privileges"
+    Write-Host "  - PowerShell 5.0+"
+    Write-Host "  - Windows 10+ (recommended)"
     Write-Host ""
 }
 

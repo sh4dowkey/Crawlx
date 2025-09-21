@@ -25,6 +25,7 @@ run:
 .PHONY: build
 build:
 	@echo "Building for current OS..."
+	@mkdir -p $(DIST_PATH)
 	@go build -o $(DIST_PATH)/$(BINARY_NAME) $(CMD_PATH)
 	@echo "Build complete!"
 
@@ -32,8 +33,9 @@ build:
 .PHONY: build-all
 build-all:
 	@echo "Building for all platforms..."
+	@mkdir -p $(DIST_PATH)
 	@GOOS=linux GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-linux-amd64 $(CMD_PATH)
-	@GOOS=windows GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME).exe $(CMD_PATH)
+	@GOOS=windows GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-windows-amd64.exe $(CMD_PATH)
 	@GOOS=darwin GOARCH=amd64 go build -o $(DIST_PATH)/$(BINARY_NAME)-darwin-amd64 $(CMD_PATH)
 	@echo "All builds complete!"
 
@@ -41,5 +43,5 @@ build-all:
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
-	@rm -rf $(DIST_PATH)/*
+	@rm -rf $(DIST_PATH)
 	@echo "Clean complete."
